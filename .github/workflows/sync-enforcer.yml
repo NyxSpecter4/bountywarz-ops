@@ -1,0 +1,157 @@
+name: MAKO Sync Enforcer
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+  schedule:
+    # Check every 30 minutes during work hours (GMT+8)
+    - cron: '*/30 1-12 * * *'
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auto-Label PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            
+            const title = pr.title.toLowerCase();
+            const body = pr.body || '';
+            const labelsToAdd = [];
+            
+            // Route by title prefix
+            if (title.startsWith('[sync-10am]') || title.startsWith('sync-10am')) {
+              labelsToAdd.push('sync/10am');
+            }
+            if (title.startsWith('[sync-6pm]') || title.startsWith('sync-6pm')) {
+              labelsToAdd.push('sync/6pm');
+            }
+            
+            // Route by agent direction
+            if (body.includes('MELI → HERMES') || title.includes('meli') && title.includes('hermes')) {
+              labelsToAdd.push('comms/meli→hermes');
+            }
+            if (body.includes('HERMES → MELI') || title.includes('hermes') && title.includes('meli')) {
+              labelsToAdd.push('comms/hermes→meli');
+            }
+            
+            // Blocker detection
+            if (title.includes('blocker') || title.includes('blocked') || body.includes('🚨')) {
+              labelsToAdd.push('priority/imperative');
+            }
+            
+            // Default audit label
+            labelsToAdd.push('audit/mako');
+            
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labelsToAdd
+              });
+            }
+
+  ping-agent:
+    runs-on: ubuntu-latest
+    needs: auto-label
+    steps:
+      - name: Check for Missing ACKs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+            const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+            
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 50
+            });
+            
+            for (const pr of prs) {
+              const hasImperative = pr.labels.some(l => l.name === 'priority/imperative');
+              const hasMeliToHermes = pr.labels.some(l => l.name === 'comms/meli→hermes');
+              const createdAt = new Date(pr.created_at);
+              
+              // Get comments to check for ACK
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number
+              });
+              
+              const hasAck = comments.some(c => 
+                c.body.toLowerCase().includes('ack') || 
+                c.body.toLowerCase().includes('acknowledged') ||
+                c.body.toLowerCase().includes('reviewed')
+              );
+              
+              // 2-hour ping: Gentle reminder
+              if (createdAt < twoHoursAgo && !hasAck && hasMeliToHermes) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `⏰ **Mako Reminder** — @hermes, this sync PR from @meli is 2+ hours old with no ACK. Please review and comment ACK when done.`
+                });
+              }
+              
+              // 4-hour escalation: Captain gets pinged
+              if (createdAt < fourHoursAgo && !hasAck && hasImperative) {
+                // Add missing ACK label
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['ack/missing']
+                });
+                
+                // Escalate to Captain
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `🚨 **MAKO ESCALATION** — @Captain, Hermes has not ACK'd this imperative sync PR in 4+ hours. Please intervene.`
+                });
+              }
+            }
+
+  mako-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_review' || contains(github.event.comment.body, 'ACK')
+    steps:
+      - name: Record ACK in Audit Log
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            
+            const now = new Date().toISOString();
+            const commenter = context.actor;
+            
+            // Check if this is an ACK
+            const isAck = context.payload.comment && 
+              (context.payload.comment.body.toLowerCase().includes('ack') ||
+               context.payload.comment.body.toLowerCase().includes('reviewed'));
+            
+            if (isAck) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `✅ **Mako Audit** — ACK recorded from @${commenter} at ${now}. Sync complete.`
+              });
+            }
