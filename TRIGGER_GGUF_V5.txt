@@ -1,0 +1,1 @@
+Trigger GGUF v5 conversion with F16 fallback + error capture
