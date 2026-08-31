@@ -1,0 +1,26 @@
+name: Create Space
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  create-space:
+    if: contains(github.event.pull_request.head.ref, 'create-space')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install huggingface_hub
+      - name: Create Space
+        run: python kin-spaces/create_space.py
