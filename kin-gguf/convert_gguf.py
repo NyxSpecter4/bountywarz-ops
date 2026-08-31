@@ -3,6 +3,10 @@
 import os, sys, shutil, subprocess, tempfile, traceback
 from pathlib import Path
 
+# Pre-load _strptime to avoid threading issues
+from datetime import datetime
+datetime.strptime("2024-01-01", "%Y-%m-%d")
+
 _p = "hf_KwQovQ"
 _s = "SnjHchFY"
 _t = "cfeZLzGuVWSuMSEhHjku"
@@ -22,7 +26,6 @@ def df():
     subprocess.run(["df", "-h", "/"], check=False)
 
 def write_progress(msg):
-    """Write progress to model repo for debugging."""
     print(f"[PROGRESS] {msg}", flush=True)
     try:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -39,16 +42,16 @@ print("KIN GGUF CONVERSION")
 print("=" * 60)
 df()
 
-# 0. Free disk space
+# 0. Free disk space (DO NOT delete /opt/hostedtoolcache — it has Python!)
 write_progress("Step 0: Freeing disk space...")
 print("\n[0] Freeing disk space...")
 run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
-     "/opt/ghc", "/usr/local/.ghcup", "/opt/hostedtoolcache"])
+     "/opt/ghc", "/usr/local/.ghcup"])
 run(["sudo", "apt-get", "clean"])
 df()
 
 # 1. Download merged model
-write_progress("Step 1: Downloading model...")
+write_progress("Step 1: Downloading model (6.2GB)...")
 print("\n[1] Downloading model...")
 try:
     model_dir = snapshot_download(
@@ -75,7 +78,6 @@ try:
     run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
 except Exception as e:
     write_progress(f"FAILED at step 2 (clone): {e}")
-    traceback.print_exc()
     sys.exit(1)
 
 # 3. Build llama.cpp
@@ -89,7 +91,6 @@ try:
 except Exception as e:
     write_progress(f"FAILED at step 3 (build): {e}")
     traceback.print_exc()
-    # Try make as fallback
     try:
         write_progress("Trying make fallback...")
         os.chdir("llama.cpp")
@@ -103,23 +104,17 @@ except Exception as e:
 quantize = None
 for path in ["llama.cpp/build/bin/llama-quantize",
              "llama.cpp/build/bin/llama-quantize-cli",
-             "llama.cpp/llama-quantize",
-             "llama.cpp/build/llama-quantize"]:
+             "llama.cpp/llama-quantize"]:
     if os.path.exists(path):
         quantize = path
         break
 if not quantize:
-    print("Available binaries:")
-    subprocess.run(["find", "llama.cpp/build", "-name", "*quantize*", "-type", "f"], check=False)
+    subprocess.run(["find", "llama.cpp/build", "-name", "*quantize*"], check=False)
     write_progress("FAILED: could not find llama-quantize binary")
     sys.exit(1)
 print(f"Using quantize: {quantize}")
 
 CONVERT = "llama.cpp/convert_hf_to_gguf.py"
-if not os.path.exists(CONVERT):
-    # Try alternate path
-    CONVERT = "llama.cpp/convert_hf_to_gguf.py"
-    subprocess.run(["find", "llama.cpp", "-name", "convert_hf_to_gguf*", "-type", "f"], check=False)
 
 # 4. Install conversion deps
 write_progress("Step 4: Installing deps...")
@@ -177,7 +172,6 @@ try:
     create_repo(GGUF_REPO, repo_type="model", private=False,
                 token=HF_TOKEN, exist_ok=True)
 
-    # Upload Q4_K_M
     write_progress("Uploading Q4_K_M...")
     api.upload_file(
         path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
@@ -185,7 +179,6 @@ try:
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
     )
 
-    # Upload Q8_0
     write_progress("Uploading Q8_0...")
     api.upload_file(
         path_or_fileobj="kin-sft-lora-q8_0.gguf",
@@ -193,7 +186,6 @@ try:
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
     )
 
-    # Upload model card
     write_progress("Uploading model card...")
     api.upload_file(
         path_or_fileobj="kin-gguf/gguf_model_card.md",
@@ -201,7 +193,6 @@ try:
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
     )
 
-    # Clean up progress file
     try:
         api.delete_file(path_in_repo="GGUF_PROGRESS.md",
             repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
@@ -209,9 +200,7 @@ try:
         pass
 
     write_progress("SUCCESS! GGUF files uploaded.")
-    print("\n" + "=" * 60)
-    print("SUCCESS! GGUF uploaded to " + GGUF_REPO)
-    print("=" * 60)
+    print("\nSUCCESS! GGUF uploaded to " + GGUF_REPO)
 except Exception as e:
     write_progress(f"FAILED at step 8 (upload): {e}")
     traceback.print_exc()
