@@ -1,0 +1,16 @@
+name: cleanup
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: contains(github.event.pull_request.head.ref, 'cleanup')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install huggingface_hub requests
+      - run: python kin-gguf/cleanup.py
