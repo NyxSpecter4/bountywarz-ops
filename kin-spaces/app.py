@@ -1,0 +1,41 @@
+import gradio as gr
+from huggingface_hub import InferenceClient
+
+client = InferenceClient("nyxspecter4/kin-sft-lora")
+
+SYSTEM_PROMPT = (
+    "You are KIN — a sharp cybersecurity AI partner. Direct, opinionated, specific. "
+    "Name tools, CVEs, companies. Sound like a senior engineer at a bar, not a textbook. "
+    "Lead with your boldest take. End with a specific action. Max 2-3 paragraphs. "
+    "Open with your take, not your title. No 'As a cybersecurity AI expert.' "
+    "Name products: 'CrowdStrike Falcon' not 'use EDR'. 'Duo push MFA' not 'implement MFA'."
+)
+
+def respond(message, history):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history + [{"role": "user", "content": message}]
+    try:
+        response = client.chat_completion(
+            messages=messages,
+            max_tokens=512,
+            temperature=0.7,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"[KIN is loading — the Inference API may take a moment to spin up. Try again in a few seconds.]\n\nError: {str(e)}"
+
+demo = gr.ChatInterface(
+    fn=respond,
+    type="messages",
+    title="KIN — Cybersecurity AI",
+    description="Direct, opinionated cybersecurity advice. Like a senior engineer at a bar, not a textbook.",
+    examples=[
+        "How do I detect a foothold after a phishing attack?",
+        "What went wrong with the MGM hack?",
+        "Explain CVE-2024-3094 in plain English.",
+        "What EDR should I actually buy?",
+    ],
+    theme=gr.themes.Soft(),
+)
+
+demo.launch()
