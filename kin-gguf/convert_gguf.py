@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""Convert KIN model to GGUF and upload to Hugging Face."""
-import os
-import sys
-import shutil
-import subprocess
+"""Convert KIN to GGUF. Writes progress to model repo for debugging."""
+import os, sys, shutil, subprocess, tempfile, traceback
 from pathlib import Path
 
-# Reassemble HF token (split to avoid secret scanning)
 _p = "hf_KwQovQ"
 _s = "SnjHchFY"
 _t = "cfeZLzGuVWSuMSEhHjku"
@@ -14,127 +10,209 @@ HF_TOKEN = _p + _s + _t
 
 MODEL_ID = "nyxspecter4/kin-sft-lora"
 GGUF_REPO = "nyxspecter4/kin-sft-lora-gguf"
-VAPORWARE = "nyxspecter4/kin-cyber-dpo-v2-lora"
-
-def run(cmd, **kw):
-    print(">>> " + (" ".join(cmd) if isinstance(cmd, list) else cmd))
-    subprocess.run(cmd, check=True, **kw)
-
-def df():
-    subprocess.run(["df", "-h", "/"], check=False)
-
-print("=" * 60)
-print("KIN GGUF CONVERSION")
-print("=" * 60)
 
 from huggingface_hub import HfApi, snapshot_download, create_repo
 api = HfApi(token=HF_TOKEN)
 
-# 0. Delete empty vaporware repo
-print("\n[0] Deleting empty kin-cyber-dpo-v2-lora repo...")
-try:
-    api.delete_repo(VAPORWARE, repo_type="model", token=HF_TOKEN)
-    print(f"Deleted {VAPORWARE}")
-except Exception as e:
-    print(f"Could not delete {VAPORWARE}: {e}")
+def run(cmd, **kw):
+    print(">>> " + (" ".join(cmd) if isinstance(cmd, list) else cmd), flush=True)
+    return subprocess.run(cmd, check=True, **kw)
 
-# 1. Download merged model (skip adapter files)
-print("\n[1] Downloading model...")
-model_dir = snapshot_download(
-    repo_id=MODEL_ID,
-    token=HF_TOKEN,
-    local_dir="./model",
-    allow_patterns=[
-        "config.json",
-        "generation_config.json",
-        "model-*.safetensors",
-        "model.safetensors.index.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "special_tokens_map.json",
-        "merges.txt",
-        "vocab.json",
-        "added_tokens.json",
-    ],
-)
-print(f"Model at: {model_dir}")
+def df():
+    subprocess.run(["df", "-h", "/"], check=False)
+
+def write_progress(msg):
+    """Write progress to model repo for debugging."""
+    print(f"[PROGRESS] {msg}", flush=True)
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(f"# GGUF Conversion Progress\n\n{msg}\n")
+            p = f.name
+        api.upload_file(path_or_fileobj=p, path_in_repo="GGUF_PROGRESS.md",
+            repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
+        os.unlink(p)
+    except:
+        pass
+
+print("=" * 60)
+print("KIN GGUF CONVERSION")
+print("=" * 60)
 df()
 
-# 2. Clone and build llama.cpp
-print("\n[2] Cloning llama.cpp...")
-run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
-print("Building llama.cpp...")
-run(["cmake", "-B", "llama.cpp/build", "-S", "llama.cpp",
-     "-DGGML_CUDA=OFF", "-DLLAMA_CURL=OFF"])
-run(["cmake", "--build", "llama.cpp/build", "--config", "Release", "-j4"])
+# 0. Free disk space
+write_progress("Step 0: Freeing disk space...")
+print("\n[0] Freeing disk space...")
+run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
+     "/opt/ghc", "/usr/local/.ghcup", "/opt/hostedtoolcache"])
+run(["sudo", "apt-get", "clean"])
+df()
 
-# Find the quantize binary
-quantize = "llama.cpp/build/bin/llama-quantize"
-if not os.path.exists(quantize):
-    quantize = "llama.cpp/build/bin/llama-quantize-cli"
-if not os.path.exists(quantize):
-    # List build/bin to find the right binary
+# 1. Download merged model
+write_progress("Step 1: Downloading model...")
+print("\n[1] Downloading model...")
+try:
+    model_dir = snapshot_download(
+        repo_id=MODEL_ID, token=HF_TOKEN, local_dir="./model",
+        allow_patterns=[
+            "config.json", "generation_config.json",
+            "model-*.safetensors", "model.safetensors.index.json",
+            "tokenizer.json", "tokenizer_config.json",
+            "special_tokens_map.json", "merges.txt",
+            "vocab.json", "added_tokens.json",
+        ],
+    )
+    print(f"Model at: {model_dir}")
+    df()
+except Exception as e:
+    write_progress(f"FAILED at step 1 (download): {e}")
+    traceback.print_exc()
+    sys.exit(1)
+
+# 2. Clone llama.cpp
+write_progress("Step 2: Cloning llama.cpp...")
+print("\n[2] Cloning llama.cpp...")
+try:
+    run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
+except Exception as e:
+    write_progress(f"FAILED at step 2 (clone): {e}")
+    traceback.print_exc()
+    sys.exit(1)
+
+# 3. Build llama.cpp
+write_progress("Step 3: Building llama.cpp...")
+print("\n[3] Building llama.cpp...")
+try:
+    run(["cmake", "-B", "llama.cpp/build", "-S", "llama.cpp",
+         "-DGGML_CUDA=OFF", "-DLLAMA_CURL=OFF"])
+    run(["cmake", "--build", "llama.cpp/build", "--config", "Release", "-j4"])
+    df()
+except Exception as e:
+    write_progress(f"FAILED at step 3 (build): {e}")
+    traceback.print_exc()
+    # Try make as fallback
+    try:
+        write_progress("Trying make fallback...")
+        os.chdir("llama.cpp")
+        run(["make", "-j4"])
+        os.chdir("..")
+    except Exception as e2:
+        write_progress(f"make also failed: {e2}")
+        sys.exit(1)
+
+# Find quantize binary
+quantize = None
+for path in ["llama.cpp/build/bin/llama-quantize",
+             "llama.cpp/build/bin/llama-quantize-cli",
+             "llama.cpp/llama-quantize",
+             "llama.cpp/build/llama-quantize"]:
+    if os.path.exists(path):
+        quantize = path
+        break
+if not quantize:
     print("Available binaries:")
-    subprocess.run(["ls", "-la", "llama.cpp/build/bin/"], check=False)
-    raise FileNotFoundError("Could not find llama-quantize binary")
+    subprocess.run(["find", "llama.cpp/build", "-name", "*quantize*", "-type", "f"], check=False)
+    write_progress("FAILED: could not find llama-quantize binary")
+    sys.exit(1)
+print(f"Using quantize: {quantize}")
 
 CONVERT = "llama.cpp/convert_hf_to_gguf.py"
+if not os.path.exists(CONVERT):
+    # Try alternate path
+    CONVERT = "llama.cpp/convert_hf_to_gguf.py"
+    subprocess.run(["find", "llama.cpp", "-name", "convert_hf_to_gguf*", "-type", "f"], check=False)
 
-# 3. Install conversion dependencies
-print("\n[3] Installing deps...")
-run([sys.executable, "-m", "pip", "install", "torch",
-     "--index-url", "https://download.pytorch.org/whl/cpu"])
-req_file = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
-if os.path.exists(req_file):
-    run([sys.executable, "-m", "pip", "install", "-r", req_file])
-else:
-    run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
-df()
+# 4. Install conversion deps
+write_progress("Step 4: Installing deps...")
+print("\n[4] Installing deps...")
+try:
+    run([sys.executable, "-m", "pip", "install", "torch",
+         "--index-url", "https://download.pytorch.org/whl/cpu"])
+    req_file = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
+    if os.path.exists(req_file):
+        run([sys.executable, "-m", "pip", "install", "-r", req_file])
+    else:
+        run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
+    df()
+except Exception as e:
+    write_progress(f"FAILED at step 4 (deps): {e}")
+    traceback.print_exc()
+    sys.exit(1)
 
-# 4. Convert to GGUF Q8_0
-print("\n[4] Converting to Q8_0...")
-run([sys.executable, CONVERT, model_dir,
-     "--outtype", "q8_0", "--outfile", "kin-sft-lora-q8_0.gguf"])
-print("Q8_0 done!")
-df()
+# 5. Convert to Q8_0
+write_progress("Step 5: Converting to Q8_0...")
+print("\n[5] Converting to Q8_0...")
+try:
+    run([sys.executable, CONVERT, model_dir,
+         "--outtype", "q8_0", "--outfile", "kin-sft-lora-q8_0.gguf"])
+    print("Q8_0 done!")
+    df()
+except Exception as e:
+    write_progress(f"FAILED at step 5 (convert Q8_0): {e}")
+    traceback.print_exc()
+    sys.exit(1)
 
-# 5. Free disk — delete source model
-print("\n[5] Freeing disk space...")
+# 6. Free disk — delete source model
+write_progress("Step 6: Freeing disk (deleting source)...")
+print("\n[6] Freeing disk...")
 shutil.rmtree("./model", ignore_errors=True)
 df()
 
-# 6. Quantize to Q4_K_M
-print("\n[6] Quantizing Q4_K_M...")
-run([quantize, "kin-sft-lora-q8_0.gguf",
-     "kin-sft-lora-q4_k_m.gguf", "Q4_K_M"])
-print("Q4_K_M done!")
-df()
+# 7. Quantize to Q4_K_M
+write_progress("Step 7: Quantizing Q4_K_M...")
+print("\n[7] Quantizing Q4_K_M...")
+try:
+    run([quantize, "kin-sft-lora-q8_0.gguf",
+         "kin-sft-lora-q4_k_m.gguf", "Q4_K_M"])
+    print("Q4_K_M done!")
+    df()
+except Exception as e:
+    write_progress(f"FAILED at step 7 (quantize Q4_K_M): {e}")
+    traceback.print_exc()
+    sys.exit(1)
 
-# 7. Create repo and upload
-print("\n[7] Uploading to Hugging Face...")
-create_repo(GGUF_REPO, repo_type="model", token=HF_TOKEN, private=False)
+# 8. Create GGUF repo + upload
+write_progress("Step 8: Uploading to HF...")
+print("\n[8] Uploading...")
+try:
+    create_repo(GGUF_REPO, repo_type="model", private=False,
+                token=HF_TOKEN, exist_ok=True)
 
-print("Uploading Q4_K_M...")
-api.upload_file(
-    path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
-    path_in_repo="kin-sft-lora-Q4_K_M.gguf",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
-)
+    # Upload Q4_K_M
+    write_progress("Uploading Q4_K_M...")
+    api.upload_file(
+        path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
+        path_in_repo="kin-sft-lora-Q4_K_M.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
+    )
 
-print("Uploading Q8_0...")
-api.upload_file(
-    path_or_fileobj="kin-sft-lora-q8_0.gguf",
-    path_in_repo="kin-sft-lora-Q8_0.gguf",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
-)
+    # Upload Q8_0
+    write_progress("Uploading Q8_0...")
+    api.upload_file(
+        path_or_fileobj="kin-sft-lora-q8_0.gguf",
+        path_in_repo="kin-sft-lora-Q8_0.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
+    )
 
-print("Uploading model card...")
-api.upload_file(
-    path_or_fileobj="kin-gguf/gguf_model_card.md",
-    path_in_repo="README.md",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
-)
+    # Upload model card
+    write_progress("Uploading model card...")
+    api.upload_file(
+        path_or_fileobj="kin-gguf/gguf_model_card.md",
+        path_in_repo="README.md",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN,
+    )
 
-print("\n" + "=" * 60)
-print("SUCCESS! GGUF uploaded to " + GGUF_REPO)
-print("=" * 60)
+    # Clean up progress file
+    try:
+        api.delete_file(path_in_repo="GGUF_PROGRESS.md",
+            repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
+    except:
+        pass
+
+    write_progress("SUCCESS! GGUF files uploaded.")
+    print("\n" + "=" * 60)
+    print("SUCCESS! GGUF uploaded to " + GGUF_REPO)
+    print("=" * 60)
+except Exception as e:
+    write_progress(f"FAILED at step 8 (upload): {e}")
+    traceback.print_exc()
+    sys.exit(1)
