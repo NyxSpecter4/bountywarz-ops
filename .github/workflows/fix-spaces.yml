@@ -1,28 +1,10 @@
-name: Fix KIN Spaces
-
+name: Disabled
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-
 jobs:
-  fix-spaces:
+  noop:
+    if: false
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install huggingface_hub
-        run: pip install huggingface_hub
-
-      - name: Fix Spaces
-        run: python kin-spaces/fix_spaces.py
+      - run: echo "disabled"

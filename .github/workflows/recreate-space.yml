@@ -6,6 +6,7 @@ on:
 
 jobs:
   recreate-space:
+    if: contains(github.event.pull_request.head.ref, 'recreate')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
