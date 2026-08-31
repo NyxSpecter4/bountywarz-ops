@@ -1,0 +1,1 @@
+Trigger GGUF v6 — patches PEFT .base_layer. tensor names
