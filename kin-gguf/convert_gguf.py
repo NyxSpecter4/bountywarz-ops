@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert KIN to GGUF — v7: install torch BEFORE patching safetensors."""
+"""Convert KIN to GGUF — v8: numpy in early install (safetensors.save_file needs it)."""
 import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
@@ -42,7 +42,7 @@ def df():
 
 try:
     print("=" * 60)
-    print("KIN GGUF CONVERSION v7 (PEFT fix + early torch install)")
+    print("KIN GGUF CONVERSION v8 (numpy + torch + safetensors early)")
     print("=" * 60)
     df()
 
@@ -53,11 +53,18 @@ try:
          "/usr/local/share/rust", "/opt/az"])
     df()
 
-    # 0b. Install torch + safetensors EARLY (needed for patching)
-    write_progress("Step 0b: Installing torch + safetensors (early)...")
+    # 0b. Install ALL deps needed for patching (torch, numpy, safetensors)
+    write_progress("Step 0b: Installing torch + numpy + safetensors (early)...")
+    run([sys.executable, "-m", "pip", "install", "numpy"])
     run([sys.executable, "-m", "pip", "install", "torch",
          "--index-url", "https://download.pytorch.org/whl/cpu"])
     run([sys.executable, "-m", "pip", "install", "safetensors"])
+    # Verify all three import
+    rc, out, err = run_capture([sys.executable, "-c",
+        "import torch, numpy, safetensors; print('torch', torch.__version__); print('numpy', numpy.__version__); print('safetensors OK')"])
+    if rc != 0:
+        write_progress(f"FAILED: early import check failed:\n{err}")
+        sys.exit(1)
     df()
 
     # 1. Download model (exclude adapter files!)
@@ -93,7 +100,6 @@ try:
             print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
             print(f"Found {len(lora_keys)} LoRA adapter tensors")
             needs_patch = True
-            # Patch the index
             new_wm = {}
             for k, v in wm.items():
                 if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
@@ -115,17 +121,14 @@ try:
             print(f"  Loading {shard}...")
             tensors = load_file(shard_path)
             print(f"  Loaded {len(tensors)} tensors")
-            # Rename in-place to save memory
             keys_to_rename = [k for k in list(tensors.keys()) if ".base_layer." in k]
             for k in keys_to_rename:
                 new_k = k.replace(".base_layer.", ".")
                 tensors[new_k] = tensors.pop(k)
-            # Remove LoRA keys
             lora_keys = [k for k in list(tensors.keys()) if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
             for k in lora_keys:
                 del tensors[k]
             print(f"  Renamed {len(keys_to_rename)} tensors, removed {len(lora_keys)} LoRA tensors")
-            # Save back (overwrite)
             save_file(tensors, shard_path, metadata={"format": "pt"})
             del tensors
             print(f"  Saved {shard}")
