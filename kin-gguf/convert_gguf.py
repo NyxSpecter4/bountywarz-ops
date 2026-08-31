@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert KIN to GGUF — v6: patches llama.cpp for PEFT .base_layer. tensor names."""
+"""Convert KIN to GGUF — v7: install torch BEFORE patching safetensors."""
 import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
@@ -42,7 +42,7 @@ def df():
 
 try:
     print("=" * 60)
-    print("KIN GGUF CONVERSION v6 (PEFT .base_layer. fix)")
+    print("KIN GGUF CONVERSION v7 (PEFT fix + early torch install)")
     print("=" * 60)
     df()
 
@@ -51,6 +51,13 @@ try:
     run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
          "/opt/ghc", "/usr/local/.ghcup", "/usr/local/share/boost",
          "/usr/local/share/rust", "/opt/az"])
+    df()
+
+    # 0b. Install torch + safetensors EARLY (needed for patching)
+    write_progress("Step 0b: Installing torch + safetensors (early)...")
+    run([sys.executable, "-m", "pip", "install", "torch",
+         "--index-url", "https://download.pytorch.org/whl/cpu"])
+    run([sys.executable, "-m", "pip", "install", "safetensors"])
     df()
 
     # 1. Download model (exclude adapter files!)
@@ -86,11 +93,11 @@ try:
             print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
             print(f"Found {len(lora_keys)} LoRA adapter tensors")
             needs_patch = True
-            # Patch the index: rename .base_layer. and remove lora keys
+            # Patch the index
             new_wm = {}
             for k, v in wm.items():
                 if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
-                    continue  # Skip LoRA adapter weights
+                    continue
                 new_k = k.replace(".base_layer.", ".")
                 new_wm[new_k] = v
             idx["weight_map"] = new_wm
@@ -100,26 +107,28 @@ try:
 
     if needs_patch:
         write_progress("Step 1c: Patching safetensors files to remove .base_layer. ...")
-        # Install safetensors if not already
-        run([sys.executable, "-m", "pip", "install", "safetensors"])
         from safetensors.torch import load_file, save_file
 
-        # Find all shard files
         shard_files = sorted([f for f in os.listdir(model_dir) if f.endswith(".safetensors")])
         for shard in shard_files:
             shard_path = os.path.join(model_dir, shard)
-            print(f"  Patching {shard}...")
+            print(f"  Loading {shard}...")
             tensors = load_file(shard_path)
-            new_tensors = {}
-            for k, v in tensors.items():
-                if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
-                    continue  # Skip LoRA adapter weights
+            print(f"  Loaded {len(tensors)} tensors")
+            # Rename in-place to save memory
+            keys_to_rename = [k for k in list(tensors.keys()) if ".base_layer." in k]
+            for k in keys_to_rename:
                 new_k = k.replace(".base_layer.", ".")
-                new_tensors[new_k] = v
-            # Overwrite the original file
-            save_file(new_tensors, shard_path, metadata={"format": "pt"})
-            del tensors, new_tensors
-            print(f"  Patched {shard}: {len(new_tensors)} tensors saved")
+                tensors[new_k] = tensors.pop(k)
+            # Remove LoRA keys
+            lora_keys = [k for k in list(tensors.keys()) if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
+            for k in lora_keys:
+                del tensors[k]
+            print(f"  Renamed {len(keys_to_rename)} tensors, removed {len(lora_keys)} LoRA tensors")
+            # Save back (overwrite)
+            save_file(tensors, shard_path, metadata={"format": "pt"})
+            del tensors
+            print(f"  Saved {shard}")
         write_progress("Step 1c: Safetensors patched successfully")
     else:
         print("No .base_layer. artifacts found — no patching needed")
@@ -167,11 +176,9 @@ try:
             sys.exit(1)
     print(f"convert script: {CONVERT}")
 
-    # 4. Install deps
-    write_progress("Step 4: Installing deps...")
+    # 4. Install remaining deps (torch already installed)
+    write_progress("Step 4: Installing remaining deps...")
     run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-    run([sys.executable, "-m", "pip", "install", "torch",
-         "--index-url", "https://download.pytorch.org/whl/cpu"])
     req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
     if os.path.exists(req):
         run([sys.executable, "-m", "pip", "install", "-r", req])
