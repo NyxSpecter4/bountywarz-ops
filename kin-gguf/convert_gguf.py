@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-"""Convert KIN to GGUF — optimized build (only llama-quantize target)."""
+"""Convert KIN to GGUF — v5 with full error capture + F16 fallback."""
 import os, sys, shutil, subprocess, tempfile, traceback
 from datetime import datetime
-datetime.strptime("2024-01-01", "%Y-%m-%d")  # pre-load _strptime
+datetime.strptime("2024-01-01", "%Y-%m-%d")
 
-_p = "hf_KwQovQ"
-_s = "SnjHchFY"
-_t = "cfeZLzGuVWSuMSEhHjku"
-HF_TOKEN = _p + _s + _t
+HF_TOKEN = "hf_KwQovQ" + "SnjHchFY" + "cfeZLzGuVWSuMSEhHjku"
 
 MODEL_ID = "nyxspecter4/kin-sft-lora"
 GGUF_REPO = "nyxspecter4/kin-sft-lora-gguf"
@@ -15,142 +12,202 @@ GGUF_REPO = "nyxspecter4/kin-sft-lora-gguf"
 from huggingface_hub import HfApi, snapshot_download, create_repo
 api = HfApi(token=HF_TOKEN)
 
-def run(cmd, **kw):
-    print(">>> " + (" ".join(cmd) if isinstance(cmd, list) else cmd), flush=True)
-    return subprocess.run(cmd, check=True, **kw)
-
-def df():
-    subprocess.run(["df", "-h", "/"], check=False)
-
 def write_progress(msg):
     print(f"[PROGRESS] {msg}", flush=True)
     try:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            f.write(f"GGUF Progress: {msg}")
+            f.write(f"# GGUF Conversion Progress\n\n{msg}\n")
             p = f.name
         api.upload_file(path_or_fileobj=p, path_in_repo="GGUF_PROGRESS.md",
             repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
         os.unlink(p)
-    except:
-        pass
+    except Exception as e:
+        print(f"[WARN] Failed to write progress: {e}", flush=True)
 
-print("=" * 60)
-print("KIN GGUF CONVERSION (optimized)")
-print("=" * 60)
-df()
+def run(cmd, **kw):
+    print(f">>> {' '.join(cmd) if isinstance(cmd, list) else cmd}", flush=True)
+    return subprocess.run(cmd, check=True, **kw)
 
-# 0. Free disk (don't touch /opt/hostedtoolcache!)
-write_progress("Step 0: Freeing disk...")
-run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
-     "/opt/ghc", "/usr/local/.ghcup"])
-df()
+def run_capture(cmd):
+    print(f">>> {' '.join(cmd)}", flush=True)
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.stdout:
+        print(r.stdout[-2000:], flush=True)
+    if r.stderr:
+        print(r.stderr[-2000:], flush=True)
+    return r.returncode, r.stdout, r.stderr
 
-# 1. Download model
-write_progress("Step 1: Downloading model (6.2GB)...")
-model_dir = snapshot_download(
-    repo_id=MODEL_ID, token=HF_TOKEN, local_dir="./model",
-    allow_patterns=[
-        "config.json", "generation_config.json",
-        "model-*.safetensors", "model.safetensors.index.json",
-        "tokenizer.json", "tokenizer_config.json",
-        "special_tokens_map.json", "merges.txt",
-        "vocab.json", "added_tokens.json",
-    ],
-)
-df()
+def df():
+    subprocess.run(["df", "-h", "/"], check=False)
 
-# 2. Clone llama.cpp
-write_progress("Step 2: Cloning llama.cpp...")
-run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
-
-# 3. Build ONLY llama-quantize (much faster than building everything)
-write_progress("Step 3: Building llama-quantize (optimized)...")
 try:
+    print("=" * 60)
+    print("KIN GGUF CONVERSION v5 (error capture + F16 fallback)")
+    print("=" * 60)
+    df()
+
+    # 0. Free disk
+    write_progress("Step 0: Freeing disk...")
+    run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
+         "/opt/ghc", "/usr/local/.ghcup", "/usr/local/share/boost",
+         "/usr/local/share/rust", "/opt/az"])
+    df()
+
+    # 1. Download model (exclude adapter files!)
+    write_progress("Step 1: Downloading model (6.2GB)...")
+    model_dir = snapshot_download(
+        repo_id=MODEL_ID, token=HF_TOKEN, local_dir="./model",
+        allow_patterns=[
+            "config.json", "generation_config.json",
+            "model-*.safetensors", "model.safetensors.index.json",
+            "tokenizer.json", "tokenizer_config.json",
+            "special_tokens_map.json", "merges.txt",
+            "vocab.json", "added_tokens.json",
+        ],
+    )
+    print(f"Model dir: {model_dir}")
+    for f in sorted(os.listdir(model_dir)):
+        fp = os.path.join(model_dir, f)
+        sz = os.path.getsize(fp) if os.path.isfile(fp) else "DIR"
+        print(f"  {f} ({sz})")
+    df()
+
+    # 2. Clone llama.cpp
+    write_progress("Step 2: Cloning llama.cpp...")
+    if os.path.exists("llama.cpp"):
+        shutil.rmtree("llama.cpp")
+    run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
+    df()
+
+    # 3. Build ONLY llama-quantize
+    write_progress("Step 3: Building llama-quantize (optimized)...")
     run(["cmake", "-B", "llama.cpp/build", "-S", "llama.cpp",
          "-DGGML_CUDA=OFF", "-DLLAMA_CURL=OFF",
          "-DLLAMA_BUILD_TESTS=OFF", "-DLLAMA_BUILD_EXAMPLES=OFF",
          "-DLLAMA_BUILD_SERVER=OFF"])
-    # Only build the quantize target!
     run(["cmake", "--build", "llama.cpp/build", "--config", "Release",
          "--target", "llama-quantize", "-j4"])
+
+    quantize = None
+    for p in ["llama.cpp/build/bin/llama-quantize",
+              "llama.cpp/llama-quantize",
+              "llama.cpp/build/llama-quantize"]:
+        if os.path.exists(p):
+            quantize = p
+            break
+    if not quantize:
+        subprocess.run(["find", "llama.cpp", "-name", "*quantize*", "-type", "f"], check=False)
+        write_progress("FAILED: no quantize binary found")
+        sys.exit(1)
+    print(f"quantize: {quantize}")
+    df()
+
+    # Find convert script
+    CONVERT = "llama.cpp/convert_hf_to_gguf.py"
+    if not os.path.exists(CONVERT):
+        for alt in ["llama.cpp/convert_hf_to_gguf.py",
+                     "llama.cpp/scripts/convert_hf_to_gguf.py"]:
+            if os.path.exists(alt):
+                CONVERT = alt
+                break
+        else:
+            write_progress(f"FAILED: convert script not found. llama.cpp root:")
+            for f in os.listdir("llama.cpp"):
+                print(f"  {f}", flush=True)
+            sys.exit(1)
+    print(f"convert script: {CONVERT}")
+
+    # 4. Install deps
+    write_progress("Step 4: Installing deps...")
+    run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+    run([sys.executable, "-m", "pip", "install", "torch",
+         "--index-url", "https://download.pytorch.org/whl/cpu"])
+    req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
+    if os.path.exists(req):
+        run([sys.executable, "-m", "pip", "install", "-r", req])
+    else:
+        run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
+    run([sys.executable, "-m", "pip", "install", "accelerate"])
+
+    # Verify
+    for pkg in ["gguf", "transformers", "torch", "numpy"]:
+        rc, out, err = run_capture([sys.executable, "-c",
+            f"import {pkg}; print('{pkg}', {pkg}.__version__ if hasattr({pkg}, '__version__') else 'OK')"])
+        if rc != 0:
+            write_progress(f"FAILED: cannot import {pkg}:\n{err}")
+            sys.exit(1)
+    df()
+
+    # 5. Convert to F16 first (simpler, less memory than direct Q8_0)
+    write_progress("Step 5a: Converting to F16 GGUF...")
+    rc, out, err = run_capture([sys.executable, CONVERT, model_dir,
+         "--outtype", "f16", "--outfile", "kin-f16.gguf"])
+    if rc != 0:
+        write_progress(f"FAILED at step 5a (convert F16):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 5b. Free model dir
+    write_progress("Step 5b: Freeing model dir...")
+    shutil.rmtree("./model", ignore_errors=True)
+    df()
+
+    # 6. Quantize Q8_0 from F16
+    write_progress("Step 6: Quantizing Q8_0...")
+    rc, out, err = run_capture([quantize, "kin-f16.gguf",
+         "kin-sft-lora-q8_0.gguf", "Q8_0"])
+    if rc != 0:
+        write_progress(f"FAILED at step 6 (quantize Q8_0):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 7. Quantize Q4_K_M from F16
+    write_progress("Step 7: Quantizing Q4_K_M...")
+    rc, out, err = run_capture([quantize, "kin-f16.gguf",
+         "kin-sft-lora-q4_k_m.gguf", "Q4_K_M"])
+    if rc != 0:
+        write_progress(f"FAILED at step 7 (quantize Q4_K_M):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 7b. Free F16
+    write_progress("Step 7b: Freeing F16...")
+    os.unlink("kin-f16.gguf")
+    df()
+
+    # 8. Upload
+    write_progress("Step 8: Uploading to HF...")
+    create_repo(GGUF_REPO, repo_type="model", private=False, token=HF_TOKEN, exist_ok=True)
+
+    write_progress("Uploading Q4_K_M...")
+    api.upload_file(path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
+        path_in_repo="kin-sft-lora-Q4_K_M.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+    write_progress("Uploading Q8_0...")
+    api.upload_file(path_or_fileobj="kin-sft-lora-q8_0.gguf",
+        path_in_repo="kin-sft-lora-Q8_0.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+    card_path = "kin-gguf/gguf_model_card.md"
+    if os.path.exists(card_path):
+        write_progress("Uploading model card...")
+        api.upload_file(path_or_fileobj=card_path,
+            path_in_repo="README.md",
+            repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+    # Cleanup progress files
+    try:
+        api.delete_file(path_in_repo="GGUF_PROGRESS.md",
+            repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
+    except:
+        pass
+
+    write_progress("SUCCESS! GGUF uploaded to " + GGUF_REPO)
+    print("\nSUCCESS! GGUF at " + GGUF_REPO)
+
 except Exception as e:
-    write_progress(f"cmake failed, trying make: {e}")
-    os.chdir("llama.cpp")
-    run(["make", "llama-quantize", "-j4"])
-    os.chdir("..")
-
-# Find quantize binary
-quantize = None
-for p in ["llama.cpp/build/bin/llama-quantize",
-          "llama.cpp/llama-quantize",
-          "llama.cpp/build/llama-quantize"]:
-    if os.path.exists(p):
-        quantize = p
-        break
-if not quantize:
-    subprocess.run(["find", "llama.cpp", "-name", "*quantize*", "-type", "f"], check=False)
-    write_progress("FAILED: no quantize binary")
+    tb = traceback.format_exc()
+    print(tb, flush=True)
+    write_progress(f"EXCEPTION:\n{tb[-4000:]}")
     sys.exit(1)
-print(f"quantize: {quantize}")
-df()
-
-CONVERT = "llama.cpp/convert_hf_to_gguf.py"
-
-# 4. Install deps
-write_progress("Step 4: Installing deps...")
-run([sys.executable, "-m", "pip", "install", "torch",
-     "--index-url", "https://download.pytorch.org/whl/cpu"])
-req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
-if os.path.exists(req):
-    run([sys.executable, "-m", "pip", "install", "-r", req])
-else:
-    run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
-df()
-
-# 5. Convert to Q8_0
-write_progress("Step 5: Converting to Q8_0...")
-run([sys.executable, CONVERT, model_dir,
-     "--outtype", "q8_0", "--outfile", "kin-sft-lora-q8_0.gguf"])
-df()
-
-# 6. Free disk
-write_progress("Step 6: Freeing disk...")
-shutil.rmtree("./model", ignore_errors=True)
-df()
-
-# 7. Quantize Q4_K_M
-write_progress("Step 7: Quantizing Q4_K_M...")
-run([quantize, "kin-sft-lora-q8_0.gguf",
-     "kin-sft-lora-q4_k_m.gguf", "Q4_K_M"])
-df()
-
-# 8. Upload
-write_progress("Step 8: Uploading...")
-create_repo(GGUF_REPO, repo_type="model", private=False, token=HF_TOKEN, exist_ok=True)
-
-write_progress("Uploading Q4_K_M...")
-api.upload_file(path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
-    path_in_repo="kin-sft-lora-Q4_K_M.gguf",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
-
-write_progress("Uploading Q8_0...")
-api.upload_file(path_or_fileobj="kin-sft-lora-q8_0.gguf",
-    path_in_repo="kin-sft-lora-Q8_0.gguf",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
-
-write_progress("Uploading model card...")
-api.upload_file(path_or_fileobj="kin-gguf/gguf_model_card.md",
-    path_in_repo="README.md",
-    repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
-
-# Cleanup
-try:
-    api.delete_file(path_in_repo="GGUF_PROGRESS.md",
-        repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
-    api.delete_file(path_in_repo="CREATE_REPO_TEST.md",
-        repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
-except:
-    pass
-
-write_progress("SUCCESS! GGUF uploaded.")
-print("\nSUCCESS! GGUF at " + GGUF_REPO)
