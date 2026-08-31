@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Create kin-cybersec Space (public, Gradio) and update model card."""
-import os, tempfile
+"""Create kin-cybersec Space (public, Gradio) + update model card + cleanup test file."""
+import os, tempfile, traceback
 
 _p = "hf_KwQovQ"
 _s = "SnjHchFY"
@@ -38,7 +38,6 @@ README = (
 
 REQS = "gradio==4.44.0\nhuggingface_hub>=0.26.0\n"
 
-# Updated model card that links to new Space name
 MODEL_CARD = """---
 license: apache-2.0
 language:
@@ -139,14 +138,24 @@ print("=" * 60)
 print("CREATE KIN-CYBERSEC SPACE + UPDATE MODEL CARD")
 print("=" * 60)
 
-# 1. Create Space
+# 0. Clean up test file from model repo
+print("\n[0] Cleaning up test file...")
+try:
+    api.delete_file(path_in_repo="CREATE_REPO_TEST.md",
+        repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
+    print("  Deleted CREATE_REPO_TEST.md")
+except Exception as e:
+    print(f"  Could not delete: {e}")
+
+# 1. Create Space (with space_sdk="gradio"!)
 print("\n[1] Creating Space...")
 try:
     create_repo(SPACE_ID, repo_type="space", private=False,
-                token=HF_TOKEN, exist_ok=True)
+                space_sdk="gradio", token=HF_TOKEN, exist_ok=True)
     print("  Space created!")
 except Exception as e:
     print(f"  Error: {e}")
+    traceback.print_exc()
 
 # 2. Upload README
 print("\n[2] Uploading README...")
@@ -158,7 +167,7 @@ api.upload_file(path_or_fileobj=p, path_in_repo="README.md",
 os.unlink(p)
 print("  Done")
 
-# 3. Upload app.py from repo
+# 3. Upload app.py from repo file
 print("\n[3] Uploading app.py...")
 api.upload_file(path_or_fileobj="kin-spaces/app.py", path_in_repo="app.py",
     repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
@@ -184,7 +193,7 @@ api.upload_file(path_or_fileobj=p, path_in_repo="README.md",
 os.unlink(p)
 print("  Done")
 
-# 6. Verify Space is public
+# 6. Verify
 print("\n[6] Verifying Space...")
 try:
     import requests
@@ -192,16 +201,13 @@ try:
         headers={"Authorization": f"Bearer {HF_TOKEN}"}, timeout=15)
     if r.status_code == 200:
         data = r.json()
-        private = data.get("private", True)
-        sdk = data.get("sdk", "unknown")
-        print(f"  Private: {private}")
-        print(f"  SDK: {sdk}")
-        if not private:
+        print(f"  Private: {data.get('private', 'unknown')}")
+        print(f"  SDK: {data.get('sdk', 'unknown')}")
+        if not data.get("private", True):
             print("  SPACE IS PUBLIC!")
-        else:
-            print("  WARNING: still private")
     else:
         print(f"  Status: {r.status_code}")
+        print(f"  Body: {r.text[:300]}")
 except Exception as e:
     print(f"  Error: {e}")
 
