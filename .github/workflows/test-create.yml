@@ -1,0 +1,22 @@
+name: Test Create Repos
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test-create:
+    if: contains(github.event.pull_request.head.ref, 'test-create')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install huggingface_hub
+      - name: Test create_repo
+        run: python kin-spaces/test_create.py
