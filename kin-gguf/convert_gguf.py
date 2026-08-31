@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Convert KIN to GGUF — v5 with full error capture + F16 fallback."""
-import os, sys, shutil, subprocess, tempfile, traceback
+"""Convert KIN to GGUF — v6: patches llama.cpp for PEFT .base_layer. tensor names."""
+import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
 
@@ -42,7 +42,7 @@ def df():
 
 try:
     print("=" * 60)
-    print("KIN GGUF CONVERSION v5 (error capture + F16 fallback)")
+    print("KIN GGUF CONVERSION v6 (PEFT .base_layer. fix)")
     print("=" * 60)
     df()
 
@@ -70,6 +70,59 @@ try:
         fp = os.path.join(model_dir, f)
         sz = os.path.getsize(fp) if os.path.isfile(fp) else "DIR"
         print(f"  {f} ({sz})")
+    df()
+
+    # 1b. Check for .base_layer. in safetensors index and patch if needed
+    write_progress("Step 1b: Checking tensor names for PEFT artifacts...")
+    index_path = os.path.join(model_dir, "model.safetensors.index.json")
+    needs_patch = False
+    if os.path.exists(index_path):
+        with open(index_path) as f:
+            idx = json.load(f)
+        wm = idx.get("weight_map", {})
+        base_layer_keys = [k for k in wm if ".base_layer." in k]
+        lora_keys = [k for k in wm if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
+        if base_layer_keys:
+            print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
+            print(f"Found {len(lora_keys)} LoRA adapter tensors")
+            needs_patch = True
+            # Patch the index: rename .base_layer. and remove lora keys
+            new_wm = {}
+            for k, v in wm.items():
+                if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
+                    continue  # Skip LoRA adapter weights
+                new_k = k.replace(".base_layer.", ".")
+                new_wm[new_k] = v
+            idx["weight_map"] = new_wm
+            with open(index_path, "w") as f:
+                json.dump(idx, f)
+            print(f"Patched index: {len(wm)} -> {len(new_wm)} tensors")
+
+    if needs_patch:
+        write_progress("Step 1c: Patching safetensors files to remove .base_layer. ...")
+        # Install safetensors if not already
+        run([sys.executable, "-m", "pip", "install", "safetensors"])
+        from safetensors.torch import load_file, save_file
+
+        # Find all shard files
+        shard_files = sorted([f for f in os.listdir(model_dir) if f.endswith(".safetensors")])
+        for shard in shard_files:
+            shard_path = os.path.join(model_dir, shard)
+            print(f"  Patching {shard}...")
+            tensors = load_file(shard_path)
+            new_tensors = {}
+            for k, v in tensors.items():
+                if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
+                    continue  # Skip LoRA adapter weights
+                new_k = k.replace(".base_layer.", ".")
+                new_tensors[new_k] = v
+            # Overwrite the original file
+            save_file(new_tensors, shard_path, metadata={"format": "pt"})
+            del tensors, new_tensors
+            print(f"  Patched {shard}: {len(new_tensors)} tensors saved")
+        write_progress("Step 1c: Safetensors patched successfully")
+    else:
+        print("No .base_layer. artifacts found — no patching needed")
     df()
 
     # 2. Clone llama.cpp
@@ -102,7 +155,6 @@ try:
     print(f"quantize: {quantize}")
     df()
 
-    # Find convert script
     CONVERT = "llama.cpp/convert_hf_to_gguf.py"
     if not os.path.exists(CONVERT):
         for alt in ["llama.cpp/convert_hf_to_gguf.py",
@@ -111,9 +163,7 @@ try:
                 CONVERT = alt
                 break
         else:
-            write_progress(f"FAILED: convert script not found. llama.cpp root:")
-            for f in os.listdir("llama.cpp"):
-                print(f"  {f}", flush=True)
+            write_progress(f"FAILED: convert script not found")
             sys.exit(1)
     print(f"convert script: {CONVERT}")
 
@@ -129,16 +179,15 @@ try:
         run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
     run([sys.executable, "-m", "pip", "install", "accelerate"])
 
-    # Verify
     for pkg in ["gguf", "transformers", "torch", "numpy"]:
         rc, out, err = run_capture([sys.executable, "-c",
-            f"import {pkg}; print('{pkg}', {pkg}.__version__ if hasattr({pkg}, '__version__') else 'OK')"])
+            f"import {pkg}; print('{pkg}', getattr({pkg}, '__version__', 'OK'))"])
         if rc != 0:
             write_progress(f"FAILED: cannot import {pkg}:\n{err}")
             sys.exit(1)
     df()
 
-    # 5. Convert to F16 first (simpler, less memory than direct Q8_0)
+    # 5. Convert to F16
     write_progress("Step 5a: Converting to F16 GGUF...")
     rc, out, err = run_capture([sys.executable, CONVERT, model_dir,
          "--outtype", "f16", "--outfile", "kin-f16.gguf"])
@@ -196,7 +245,6 @@ try:
             path_in_repo="README.md",
             repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
 
-    # Cleanup progress files
     try:
         api.delete_file(path_in_repo="GGUF_PROGRESS.md",
             repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
