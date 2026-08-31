@@ -1,0 +1,32 @@
+name: Convert KIN to GGUF
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  convert-gguf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Convert and upload GGUF
+        run: python kin-gguf/convert_gguf.py
+        timeout-minutes: 40
