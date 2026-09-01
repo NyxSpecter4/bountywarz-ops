@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Convert KIN to GGUF — v8: numpy in early install (safetensors.save_file needs it)."""
+"""Convert KIN v6 to GGUF — targets kinetigor-dpo-cybersec (Qwen2.5-0.5B DPO merged)."""
 import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
 
 HF_TOKEN = "hf_KwQovQ" + "SnjHchFY" + "cfeZLzGuVWSuMSEhHjku"
 
-MODEL_ID = "nyxspecter4/kin-sft-lora"
-GGUF_REPO = "nyxspecter4/kin-sft-lora-gguf"
+MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
+GGUF_REPO = "nyxspecter4/kinetigor-dpo-cybersec-gguf"
 
 from huggingface_hub import HfApi, snapshot_download, create_repo
 api = HfApi(token=HF_TOKEN)
@@ -42,7 +42,7 @@ def df():
 
 try:
     print("=" * 60)
-    print("KIN GGUF CONVERSION v8 (numpy + torch + safetensors early)")
+    print("KIN v6 GGUF CONVERSION (kinetigor-dpo-cybersec, Qwen2.5-0.5B)")
     print("=" * 60)
     df()
 
@@ -59,7 +59,6 @@ try:
     run([sys.executable, "-m", "pip", "install", "torch",
          "--index-url", "https://download.pytorch.org/whl/cpu"])
     run([sys.executable, "-m", "pip", "install", "safetensors"])
-    # Verify all three import
     rc, out, err = run_capture([sys.executable, "-c",
         "import torch, numpy, safetensors; print('torch', torch.__version__); print('numpy', numpy.__version__); print('safetensors OK')"])
     if rc != 0:
@@ -67,13 +66,13 @@ try:
         sys.exit(1)
     df()
 
-    # 1. Download model (exclude adapter files!)
-    write_progress("Step 1: Downloading model (6.2GB)...")
+    # 1. Download model (v6 has single model.safetensors, 1.88GB)
+    write_progress("Step 1: Downloading model (1.88GB)...")
     model_dir = snapshot_download(
         repo_id=MODEL_ID, token=HF_TOKEN, local_dir="./model",
         allow_patterns=[
             "config.json", "generation_config.json",
-            "model-*.safetensors", "model.safetensors.index.json",
+            "model.safetensors", "model-*.safetensors", "model.safetensors.index.json",
             "tokenizer.json", "tokenizer_config.json",
             "special_tokens_map.json", "merges.txt",
             "vocab.json", "added_tokens.json",
@@ -86,7 +85,7 @@ try:
         print(f"  {f} ({sz})")
     df()
 
-    # 1b. Check for .base_layer. in safetensors index and patch if needed
+    # 1b. Check for .base_layer. in safetensors (skip if no index — single file is already merged)
     write_progress("Step 1b: Checking tensor names for PEFT artifacts...")
     index_path = os.path.join(model_dir, "model.safetensors.index.json")
     needs_patch = False
@@ -98,7 +97,6 @@ try:
         lora_keys = [k for k in wm if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
         if base_layer_keys:
             print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
-            print(f"Found {len(lora_keys)} LoRA adapter tensors")
             needs_patch = True
             new_wm = {}
             for k, v in wm.items():
@@ -114,7 +112,6 @@ try:
     if needs_patch:
         write_progress("Step 1c: Patching safetensors files to remove .base_layer. ...")
         from safetensors.torch import load_file, save_file
-
         shard_files = sorted([f for f in os.listdir(model_dir) if f.endswith(".safetensors")])
         for shard in shard_files:
             shard_path = os.path.join(model_dir, shard)
@@ -179,7 +176,7 @@ try:
             sys.exit(1)
     print(f"convert script: {CONVERT}")
 
-    # 4. Install remaining deps (torch already installed)
+    # 4. Install remaining deps
     write_progress("Step 4: Installing remaining deps...")
     run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
     req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
@@ -200,7 +197,7 @@ try:
     # 5. Convert to F16
     write_progress("Step 5a: Converting to F16 GGUF...")
     rc, out, err = run_capture([sys.executable, CONVERT, model_dir,
-         "--outtype", "f16", "--outfile", "kin-f16.gguf"])
+         "--outtype", "f16", "--outfile", "kinetigor-v6-f16.gguf"])
     if rc != 0:
         write_progress(f"FAILED at step 5a (convert F16):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
         sys.exit(1)
@@ -213,8 +210,8 @@ try:
 
     # 6. Quantize Q8_0 from F16
     write_progress("Step 6: Quantizing Q8_0...")
-    rc, out, err = run_capture([quantize, "kin-f16.gguf",
-         "kin-sft-lora-q8_0.gguf", "Q8_0"])
+    rc, out, err = run_capture([quantize, "kinetigor-v6-f16.gguf",
+         "kinetigor-v6-q8_0.gguf", "Q8_0"])
     if rc != 0:
         write_progress(f"FAILED at step 6 (quantize Q8_0):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
         sys.exit(1)
@@ -222,8 +219,8 @@ try:
 
     # 7. Quantize Q4_K_M from F16
     write_progress("Step 7: Quantizing Q4_K_M...")
-    rc, out, err = run_capture([quantize, "kin-f16.gguf",
-         "kin-sft-lora-q4_k_m.gguf", "Q4_K_M"])
+    rc, out, err = run_capture([quantize, "kinetigor-v6-f16.gguf",
+         "kinetigor-v6-q4_k_m.gguf", "Q4_K_M"])
     if rc != 0:
         write_progress(f"FAILED at step 7 (quantize Q4_K_M):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
         sys.exit(1)
@@ -231,7 +228,7 @@ try:
 
     # 7b. Free F16
     write_progress("Step 7b: Freeing F16...")
-    os.unlink("kin-f16.gguf")
+    os.unlink("kinetigor-v6-f16.gguf")
     df()
 
     # 8. Upload
@@ -239,13 +236,13 @@ try:
     create_repo(GGUF_REPO, repo_type="model", private=False, token=HF_TOKEN, exist_ok=True)
 
     write_progress("Uploading Q4_K_M...")
-    api.upload_file(path_or_fileobj="kin-sft-lora-q4_k_m.gguf",
-        path_in_repo="kin-sft-lora-Q4_K_M.gguf",
+    api.upload_file(path_or_fileobj="kinetigor-v6-q4_k_m.gguf",
+        path_in_repo="kinetigor-v6-Q4_K_M.gguf",
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
 
     write_progress("Uploading Q8_0...")
-    api.upload_file(path_or_fileobj="kin-sft-lora-q8_0.gguf",
-        path_in_repo="kin-sft-lora-Q8_0.gguf",
+    api.upload_file(path_or_fileobj="kinetigor-v6-q8_0.gguf",
+        path_in_repo="kinetigor-v6-Q8_0.gguf",
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
 
     card_path = "kin-gguf/gguf_model_card.md"

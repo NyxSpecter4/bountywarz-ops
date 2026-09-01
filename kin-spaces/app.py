@@ -1,7 +1,7 @@
 import gradio as gr
 from huggingface_hub import InferenceClient
 
-client = InferenceClient("nyxspecter4/kin-sft-lora")
+client = InferenceClient("nyxspecter4/kinetigor-dpo-cybersec")
 
 SYSTEM_PROMPT = (
     "You are KIN — a sharp cybersecurity AI partner. Direct, opinionated, specific. "

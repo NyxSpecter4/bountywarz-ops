@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create kin-inference Space as public and upload Gradio files."""
+"""Create kin-inference Space as public and upload Gradio files — v6 targets kinetigor-dpo-cybersec."""
 import os, time, tempfile, traceback
 from huggingface_hub import HfApi, create_repo
 
@@ -10,6 +10,7 @@ HF_TOKEN = _p + _s + _t
 
 api = HfApi(token=HF_TOKEN)
 SPACE_ID = "nyxspecter4/kin-inference"
+MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
 
 README = (
     "---\n"
@@ -27,17 +28,17 @@ README = (
     "  - threat-intelligence\n"
     "  - penetration-testing\n"
     "models:\n"
-    "  - nyxspecter4/kin-sft-lora\n"
+    f"  - {MODEL_ID}\n"
     "---\n\n"
-    "# KIN \u2014 Cybersecurity AI\n\n"
-    "Chat with KIN, a cybersecurity AI fine-tuned on Qwen2.5-3B-Instruct. "
+    "# KIN \u2014 Cybersecurity AI (v6 DPO)\n\n"
+    "Chat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B. "
     "Direct, opinionated, specific \u2014 like a senior engineer at a bar.\n"
 )
 
 REQS = "gradio==4.44.0\nhuggingface_hub>=0.26.0\n"
 
 print("=" * 60)
-print("CREATE KIN-INFERENCE SPACE (PUBLIC)")
+print("CREATE KIN-INFERENCE SPACE (PUBLIC) — v6 kinetigor-dpo-cybersec")
 print("=" * 60)
 
 # Try to create the Space — retry if name still reserved
