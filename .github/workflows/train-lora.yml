@@ -40,6 +40,10 @@ jobs:
           python /tmp/check.py >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+      - name: Make old models private
+        run: python kin-gguf/cleanup_visibility.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
       - name: Skip training (adapter already exists)
         if: steps.check.outputs.skip == 'true'
         run: echo "v5 adapter already trained, skipping"
