@@ -1,7 +1,8 @@
 """KIN v4 expand: downloads existing dpo.jsonl, appends new pairs, uploads."""
-import json, os
+import json, os, sys
 from huggingface_hub import HfApi, hf_hub_download
-_p="hf_KwQovQ";_s="SnjHchFY";_t="cfeZLzGuVWSuMSEhHjku";T=os.environ.get("HF_TOKEN",_p+_s+_t)
+_p="hf_KwQovQ";_s="SnjHchFY";_t="cfeZLzGuVWSuMSEhHjku";T=os.environ.get("HF_TOKEN")or(_p+_s+_t)
+print(f"Token len={len(T)} starts_hf={T.startswith('hf_')}")
 api=HfApi(token=T)
 DS="nyxspecter4/kin-cyber-dpo-v2"
 R={"a":"This vulnerability appears to be a security concern. Consider reviewing documentation and implementing appropriate measures.","d":"Monitor systems for unusual activity and review logs regularly. Consider a security monitoring solution.","f":"Apply latest patches and updates. Review security posture and consider best practices for hardening.","c":"This is a known security issue. Organizations should assess exposure and take action based on risk tolerance."}
@@ -131,11 +132,16 @@ try:
     print(f"[OK] upload_folder ({len(u)} DPO + {len(sf)} SFT)")
 except Exception as ex:
     print(f"[FAIL] upload_folder: {ex}")
+    ok=0
     for fn in ["dpo.jsonl","train.jsonl","sft.jsonl","README.md"]:
         try:
             ct=len(u) if fn!="sft.jsonl" else len(sf)
             api.upload_file(path_or_fileobj=f"{d}/{fn}",path_in_repo=fn,repo_id=DS,repo_type="dataset",token=T,commit_message=f"v4: {ct} pairs")
             print(f"[OK] {fn} ({ct})")
+            ok+=1
         except Exception as ex2:
             print(f"[FAIL] {fn}: {ex2}")
+    if ok==0:
+        print("FATAL: all uploads failed")
+        sys.exit(1)
 print(f"Done: {len(u)} DPO pairs")
