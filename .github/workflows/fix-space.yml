@@ -1,0 +1,18 @@
+name: fix-space
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  fix-space:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: contains(github.event.pull_request.head.ref, 'space')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests huggingface_hub
+      - run: python kin-gguf/fix_space_and_data.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
