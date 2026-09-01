@@ -180,6 +180,20 @@ def main():
         error_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sft_error.txt")
         with open(error_path, "w") as f:
             f.write(f"SFT Error: {e}\n\n{traceback.format_exc()}")
+        # Upload error to HuggingFace for remote diagnostics
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi(token=HF_TOKEN)
+            api.upload_file(
+                path_or_fileobj=error_path,
+                path_in_repo="sft_error.txt",
+                repo_id=f"{HF_USER}/kin-cyber-dpo-v2",
+                repo_type="dataset",
+                commit_message="SFT error diagnostics",
+            )
+            print("Error file uploaded to HuggingFace for diagnostics.")
+        except Exception:
+            pass
         sys.exit(1)
 
 
