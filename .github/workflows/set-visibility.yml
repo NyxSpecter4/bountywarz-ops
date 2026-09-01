@@ -1,0 +1,16 @@
+name: set-visibility
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  set-visibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: contains(github.event.pull_request.head.ref, 'visibility')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install huggingface_hub
+      - run: python kin-gguf/set_visibility.py
