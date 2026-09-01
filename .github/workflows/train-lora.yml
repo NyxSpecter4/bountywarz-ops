@@ -40,13 +40,17 @@ jobs:
             echo "has_gpu=false" >> $GITHUB_OUTPUT
           fi
 
-      # Phase 1: SFT
-      - name: Phase 1 - SFT Training
+      # Phase 1a: Generate SFT data
+      - name: Phase 1a - Generate SFT Data
         continue-on-error: true
         working-directory: kin-gguf
-        run: |
-          python generate_sft_data.py
-          python train_sft.py
+        run: python generate_sft_data.py
+
+      # Phase 1b: SFT Training
+      - name: Phase 1b - SFT Training
+        continue-on-error: true
+        working-directory: kin-gguf
+        run: python train_sft.py
 
       # Phase 2: DPO with GDPO soft labels
       - name: Phase 2 - DPO Training

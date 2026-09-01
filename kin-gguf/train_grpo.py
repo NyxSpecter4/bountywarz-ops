@@ -209,7 +209,7 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(
             BASE_MODEL,
             token=HF_TOKEN,
-            torch_dtype=torch.float16,
+            dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True,
         )
@@ -238,7 +238,7 @@ def main():
             per_device_train_batch_size=BATCH_SIZE,
             gradient_accumulation_steps=GRAD_ACCUM,
             learning_rate=LEARNING_RATE,
-            warmup_ratio=0.1,
+            warmup_steps=10,
             logging_steps=5,
             save_steps=50,
             save_total_limit=2,
