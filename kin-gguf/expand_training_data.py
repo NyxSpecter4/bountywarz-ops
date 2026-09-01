@@ -43,4 +43,170 @@ L=[
 ("Docker container running as root","No USER directive in Dockerfile","Check Dockerfile for USER, scan with Trivy, docker inspect","Add USER 1001, distroless base, Pod Security Standards, read-only root fs","Container escape gives root on host."),
 ]
 I=[
-("Active ransomware encryption","Files encrypted across network shares","Isolate hosts, check EDR for ransomware process, identify family","Isolate, disable SMB °¡¬¥¹¥Ñ¥°ÍÌ°ÁÉÍÉÙÙ¥¹°¹%H¥É´°]¥Ñ¡½ÕÐ¥Í½±Ñ¥½¸°¹ÉåÁÑ¥½¸ÍÁÉÌÑ¼±°Í¡ÉÌ¸¤°( É¹Ñ¥°Ñ¡ÐÙ¥Á¡¥Í¡¥¹°=ÕÑ Ñ½­¹Ì¥¹ÕÍÑÈÁÍÍÝ½ÉÉÍÐ°¡¬µ¥°ÑÝä½ÈÁ¡¥Í¡¥¹°éÕÉ½È¥µÁ½ÍÍ¥±ÑÉÙ°°Õ¥Ð=ÕÑ É¹ÑÌ°IÙ½­Ñ½­¹Ì°½ÉÁÍÍÝ½ÉÉÍÐ°±½¬Í¹È½µ¥¹Ì°½¹¥Ñ¥½¹°ÍÌ°AÉÍ¥ÍÑ¹ÐÍÌÙ¥ÍÑ½±¸=ÕÑ Ñ½­¹Ì¸¤°( 1ÑÉ°µ½Ùµ¹ÐÙ¥M5°ÑÑ­ÈÕÍ¥¹AÍá½]5$É½ÍÌ½µ¥¸°¡¬M5ÍÍÍ¥½¹ÌÑ¼Õ¹ÕÍÕ°¡½ÍÑÌ°AÍáÍÉÙ¥¥¹ÍÑ±°°]5$ÍÕÍÉ¥ÁÑ¥½¹Ì°	±½¬M5ÑÝ¸Íµ¹ÑÌ°¥Í±µ¥¸Í¡ÉÌ°¡Õ¹Ð½ÈAÍá°]¥Ñ¡½ÕÐ½¹Ñ¥¹µ¹Ð°É¡Ì½µ¥¸½¹ÑÉ½±±È¸¤°( Ñá¥±ÑÉÑ¥½¸Ù¥9LÑÕ¹¹±¥¹°!¥ 9LÅÕÉäÙ½±ÕµÑ¼Í¥¹±½µ¥¸°¡¬9L±½Ì½È¡¥ Ù½±Õµ°±½¹QaPÉ½ÉÌ°M%4¹±åÍ¥Ì°	±½¬½µ¥¸Ð9LÉÍ½±ÙÈ°9L¥ÉÝ±°°±ÉÐ½¸¡¥ µÙ½±Õµ9L°	åÁÍÍÌÉÍÌ½¹ÑÉ½±Ì¸U¹ÑÑ±ä1@¸¤°( ]Í¡±°½¸ÍÉÙÈ°U¹áÁÑA!@½)M@¥±¥¸ÝÉ½½Ð°¡¬Ý±½Ì½ÈA=MPÑ¼Õ¹­¹½Ý¸¥±Ì°¥±ÌÝ¥Ñ Ù°½ÍåÍÑ´½á°Iµ½ÙÝÍ¡±°°ÁÑ ÙÕ±¸°É½ÑÑÉÌ°Á±½ä]°Õ¥ÐÝÉ½½Ð°AÉÍ¥ÍÑ¹Ð­½½È¸áÕÑ½µµ¹Ì°ÉÑ°Á¥Ù½Ð¸¤°)t)¡¤è(¤±À±Ø±Ì±±±àõ(ÉÑÕÉ¸m´¡¹±åéí¥ô¡íÁô¤¸]¡Ð¡ÁÁ¹°ÍÙÉ¥Ñä°¹¥µÁÐü±¨©í¥ô´íÁô¨©q¹q¸¨©YÕ±¹É¥±¥Ñäè¨¨íÙõq¹q¸¨©MÙÉ¥Ñäè¨¨íÍõq¹q¹q¸¨©%µÁÐè¨¨íáô°¤°(´¡!½Ü¼$ÑÐí¥ô¡íÙô¤¥¸µä¹Ù¥É½¹µ¹Ðü±¨©ÑÑ¥½¸½Èí¥ôè¨©q¹q¹íõq¹q¹¡¬M%4½ÈµÑ¡¥¹¥¹¥Ñ½ÉÌ¸MÐÕÀ±ÉÑÌ½ÈÑ¡Í±½Í¥¹ÑÕÉÌ¸°¤°(´¡]¡ÐÌÑ¡¥à½Èí¥ô¡íÙô¤ü±¨©¥à½Èí¥ôè¨©q¹q¹íõq¹q¹YÉ¥ääÉµÉÕ¹¹¥¹ÑÑ¥½¸¡­ÌÑÈÁÁ±å¥¹Ñ¡¥à¸°¤°(´¡½¹ÑáÐ½¸í¥ô´Ý¡ä½ÌÑ¡¥ÌµÑÑÈü±¨©í¥ô½¹ÑáÐè¨©q¹q¹íáõq¹q¹AÉÐ½É½ÈÙÕ±¹É¥±¥ÑäÁÑÑÉ¹Ì¸U¹ÉÍ½ÉÌÉÁ¥ÁÑ¡¥¹°Íµ¹ÑÑ¥½¸°¹Íµ¥¸µÁÑ ¸°¥t)¼¡¼¤è(±Ø±±±àõ¼(ÉÑÕÉ¸m´¡áÁ±¥¸íôÝ¥Ñ É°áµÁ±¸±¨©íô¨©q¹q¸¨©áµÁ±è¨¨íÙõq¹q¸¨©%µÁÐè¨¨íáô°¤°(´¡!½Ü¼$ÑÐíô¥ÍÍÕÌü±¨©ÑÑ¥½¸½Èíôè¨©q¹q¹íõq¹q¹UÍMMP½MP±½¹Í¥µ¹Õ°ÉÙ¥Ü¸°¤°(´¡!½Ü¼$¥àíôü±¨©¥à½Èíôè¨©q¹q¹íõq¹q¹%µÁ±µ¹Ð¥¸M1°¹½ÐÁ½ÍÐµÁ±½åµ¹Ð¸°¤°(´¡]¡ä¥Ìíô¥µÁ½ÉÑ¹Ðü±¨©íô½¹ÑáÐè¨©q¹q¹íáõq¹q¹ÁÁÉÌ¥¸É°µÝ½É±É¡Ì¸9ÌÑ¡¹¥°½¹ÑÉ½±Ì¬Ù±½ÁÈÕÑ¥½¸¸°¥t)°¡¤è(Ð±Ì±±±àõ(ÉÑÕÉ¸m´¡¹±åéèíÑô¡íÍô¤¸±¨©íÑô¨©q¹q¸¨©M¹É¥¼è¨¨íÍõq¹q¸¨©%µÁÐè¨¨íáõq¹q¹½µµ½¸±½Õµ¥Í½¹¥ÕÉÑ¥½¸¸ÕÍÑ½µÈ½Ý¹ÌÑ¡¥ÌÉ¥Í¬¸°¤°(´¡ÑÐèíÑôü±¨©ÑÑ¥½¸½ÈíÑôè¨©q¹q¹íõq¹q¹UÍMA4Ñ½½±ÌèMÕÉ¥Ñä!Õ°¹È½È±½Õ¸°¤°(´¡¥àèíÑôü±¨©¥à½ÈíÑôè¨©q¹q¹íõq¹q¹UÍ%Ý¥Ñ Á½±¥äµÌµ½ÕÉÉ¥±Ì¸°¤°(´¡½¹ÑáÐèíÑôü±¨©íÑô½¹ÑáÐè¨©q¹q¹íáõq¹q¹±½Õµ¥Í½¹¥ÌÉÄÕÍ½±½ÕÉ¡Ì¸°¥t)¤¡¤¤è(Ð±Ì±±±àõ¤(ÉÑÕÉ¸m´¡%HèíÑô¸íÍô¸¹±åÍ¥Ìü±¨©%HèíÑô¨©q¹q¹íõq¹q¹q¸¨©]¡äÑ¡¥ÌµÑÑÉÌè¨¨íáô°¤°(´¡ÑÐíÑôÕÉ¥¹¥¹¥¹Ðü±¨©ÑÑ¥½¸è¨©q¹q¹íõq¹q¹½ÉÉ±ÑM%4°H°¹ÑÝ½É¬Ñ±µÑÉä¸Q¥µ¥ÌÉ¥Ñ¥°¸°¤°(´¡½¹Ñ¥¹µ¹Ð¹¥à½ÈíÑôü±¨©½¹Ñ¥¹µ¹Ð¬¥àè¨©q¹q¹íõq¹q¹½±±½Ü%HÁ±å½½¬¸½Õµ¹ÐÑ¥½¹Ì¸AÉÍÉÙÙ¥¹¸°¤°(´¡½¹ÑáÐèíÑô¥¸%Hü±¨©íÑô½¹ÑáÐè¨©q¹q¹íáõq¹q¹%¹ÉÍ¥¹±ä½µµ½¸¸Q±Ñ½ÀáÉ¥ÍÌ¡±ÀÑµÌÉÍÁ½¹ÍÑÈ¸°¥t)¸õmt)½È¥¸è¸¹áÑ¹¡¡¤¤)½È¼¥¸<è¸¹áÑ¹¡¼¡¼¤¤)½È¥¸0è¸¹áÑ¹¡°¡¤¤)½È¤¥¸$è¸¹áÑ¹¡¤¡¤¤¤)ÁÉ¥¹Ð¡9ÜÁ¥ÉÌèí±¸¡¸¥ô¤)õmt)ÑÉäè(Àõ¡}¡Õ}½Ý¹±½¡ÉÁ½}¥õL±ÉÁ½}ÑåÁôÑÍÐ±¥±¹µôÁ¼¹©Í½¹°±Ñ½­¸õP¤(Ý¥Ñ ½Á¸¡À¤Ìè(½È°¥¸è(°õ°¹ÍÑÉ¥À ¤(¥°è¹ÁÁ¹¡©Í½¸¹±½Ì¡°¤¤(ÁÉ¥¹Ð¡á¥ÍÑ¥¹èí±¸¡¥ô¤)áÁÐáÁÑ¥½¸Ìàè(ÁÉ¥¹Ð¡½Ý¹±½¥±èíáô¤)õ­¸)ÌõÍÐ ¤)Ôõmt)½ÈÀ¥¸è(¬õÁlÁÉ½µÁÐulèÈÀÁt(¥¬¹½Ð¥¸ÌèÌ¹¡¬¤íÔ¹ÁÁ¹¡À¤)ÁÉ¥¹Ð¡U¹¥ÅÕèí±¸¡Ô¥ô¤)Íõmì¥¹ÍÑÉÕÑ¥½¸éÁlÁÉ½µÁÐt°¥¹ÁÕÐè°½ÕÑÁÕÐéÁl¡½Í¸uô½ÈÀ¥¸Õt)ô½ÑµÀ½­¥¸µØÐ)½Ì¹µ­¥ÉÌ¡±á¥ÍÑ}½¬õQÉÕ¤)½È¸±Ð¥¸l Á¼¹©Í½¹°±Ô¤° ÑÉ¥¸¹©Í½¹°±Ô¤° ÍÐ¹©Í½¹°±Í¥tè(Ý¥Ñ ½Á¸¡íô½í¹ô°Ü¤Ìè(½ÈÀ¥¸Ðè¹ÝÉ¥Ñ¡©Í½¸¹ÕµÁÌ¡À¤¬q¸¤)Éõ´´´)±¹Õè¸)±¥¹ÍèÁ¡´È¸À)Í¥é}Ñ½É¥ÌèÅ,ñ¸ðÄÁ,)ÑÌèmåÉÍÕÉ¥Ñä°Á¼°ÙÕ±¹É¥±¥Ñä°ÍÕÉ¥Ñä°éÉ¼µ¡±±Õ¥¹Ñ¥½¸°Y°5%QIµQQ,°=]M@°±½ÕµÍÕÉ¥Ñä°¥¹¥¹ÐµÉÍÁ½¹Í°µ±ÝÉµ¹±åÍ¥Ì°ÍÕÉµ½¥¹t(´´´((-%8åÉÍÕÉ¥ÑäA<ÑÍÐØÐ()AÉÉ¹µ½ÁÑ¥µ¥éåÉÍÕÉ¥ÑäÑÉ¥¹¥¹Ñ½ÈéÉ¼µ¡±±Õ¥¹Ñ¥½¸ÙÕ±¹É¥±¥Ñä¹±åÍ¥Ì¸((MÑÑÌ(´A<Á¥ÉÌèí±¸¡Ô¥ô(´MPÁ¥ÉÌèí±¸¡Í¥ô(´9Ü¥¸ØÐèí±¸¡¸¥ôÁ¥ÉÌ ÈÀYÌ°Ô=]M@°Ô±½Õ°Ô%H¤((½ÉµÐ(Á¼¹©Í½¹°¼ÑÉ¥¸¹©Í½¹°)A<½ÉµÐèÁÉ½µÁÐ°¡½Í¸°É©Ñ¸¡½Í¸èÁÉ¥Í¹±åÍ¥ÌÝ¥Ñ ÍÁ¥¥Ñ½½±Ì¹¥áÌ¸I©ÑèÙÕ°¡¥¹ÉÍÁ½¹ÍÌ¸(ÍÐ¹©Í½¹°)MP½ÉµÐè¥¹ÍÑÉÕÑ¥½¸°¥¹ÁÕÐ°½ÕÑÁÕÐ¸()ÑÉäè(ÉÀõíô½I5¹µ(Ý¥Ñ ½Á¸¡ÉÀ°Ü¤Ìè¹ÝÉ¥Ñ¡É¤(Á¤¹ÕÁ±½}½±È¡½±É}ÁÑ õ±ÉÁ½}¥õL±ÉÁ½}ÑåÁôÑÍÐ±Ñ½­¸õP±½µµ¥Ñ}µÍÍõØÐèí±¸¡Ô¥ôA<¬í±¸¡Í¥ôMPÁ¥ÉÌ±±±½Ý}ÁÑÑÉ¹Ìõl¨¹©Í½¹°°¨¹µt¤(ÁÉ¥¹Ð¡m=-tÕÁ±½}½±È¡í±¸¡Ô¥ôA<¬í±¸¡Í¥ôMP¤¤)áÁÐáÁÑ¥½¸Ìàè(ÁÉ¥¹Ð¡m%1tÕÁ±½}½±Èèíáô¤(½È¸¥¸lÁ¼¹©Í½¹°°ÑÉ¥¸¹©Í½¹°°ÍÐ¹©Í½¹°°I5¹µtè(ÑÉäè(Ðõ±¸¡Ô¤¥¸ôÍÐ¹©Í½¹°±Í±¸¡Í¤(Á¤¹ÕÁ±½}¥±¡ÁÑ¡}½É}¥±½¨õíô½í¹ô±ÁÑ¡}¥¹}ÉÁ¼õ¸±ÉÁ½}¥õL±ÉÁ½}ÑåÁôÑÍÐ±Ñ½­¸õP±½µµ¥Ñ}µÍÍõØÐèíÑôÁ¥ÉÌ¤(ÁÉ¥¹Ð¡m=-tí¹ô¡íÑô¤¤(áÁÐáÁÑ¥½¸ÌàÈè(ÁÉ¥¹Ð¡m%1tí¹ôèíàÉô¤)ÁÉ¥¹Ð¡½¹èí±¸¡Ô¥ôA<Á¥ÉÌ¤(
+("Active ransomware encryption","Files encrypted across network shares","Isolate hosts, check EDR for ransomware process, identify family","Isolate, disable SMB, check initial access, preserve evidence, engage IR firm","Without isolation, encryption spreads to all shares."),
+("Credential theft via phishing","OAuth tokens being used after password reset","Check email gateway for phishing, Azure AD for impossible travel, audit OAuth grants","Revoke tokens, force password reset, block sender domains, conditional access","Persistent access via stolen OAuth tokens."),
+("Lateral movement via SMB","Attacker using PsExec/WMI across domain","Check SMB sessions to unusual hosts, PsExec service install, WMI subscriptions","Block SMB between segments, disable Admin shares, hunt for PsExec","Without containment, reaches Domain Controller."),
+("Data exfiltration via DNS tunneling","High DNS query volume to single domain","Check DNS logs for high volume, long TXT records, SIEM analysis","Block domain at DNS resolver, DNS firewall, alert on high-volume DNS","Bypasses egress controls. Undetectable by DLP."),
+("Webshell on server","Unexpected PHP/JSP file in web root","Check web logs for POST to unknown files, files with eval/system/exec","Remove webshell, patch vuln, rotate creds, deploy WAF, audit web root","Persistent backdoor. Execute commands, read data, pivot."),
+]
+def gc(c):
+    i,p,v,s,d,f,x=c
+    return [m(f"Analyze {i} ({p}). What happened, severity, and impact?",f"**{i} - {p}**
+
+**Vulnerability:** {v}
+
+**Severity:** {s}
+
+
+**Impact:** {x}","a"),
+         m(f"How do I detect {i} ({v}) in my environment?",f"**Detection for {i}:**
+
+{d}
+
+Check SIEM for matching indicators. Set up alerts for these log signatures.","d"),
+         m(f"What's the fix for {i} ({v})?",f"**Fix for {i}:**
+
+{f}
+
+Verify by re-running detection checks after applying the fix.","f"),
+         m(f"Context on {i} - why does this matter?",f"**{i} Context:**
+
+{x}
+
+Part of broader vulnerability patterns. Underscores rapid patching, segmentation, defense-in-depth.","c")]
+def go(o):
+    c,v,d,f,x=o
+    return [m(f"Explain {c} with a real example.",f"**{c}**
+
+**Example:** {v}
+
+**Impact:** {x}","a"),
+         m(f"How do I detect {c} issues?",f"**Detection for {c}:**
+
+{d}
+
+Use SAST/DAST alongside manual review.","d"),
+         m(f"How do I fix {c}?",f"**Fix for {c}:**
+
+{f}
+
+Implement in SDLC, not post-deployment.","f"),
+         m(f"Why is {c} important?",f"**{c} Context:**
+
+{x}
+
+Appears in real-world breaches. Needs technical controls + developer education.","c")]
+def gl(c):
+    t,s,d,f,x=c
+    return [m(f"Analyze: {t} ({s}).",f"**{t}**
+
+**Scenario:** {s}
+
+**Impact:** {x}
+
+Common cloud misconfiguration. Customer owns this risk.","a"),
+         m(f"Detect: {t}?",f"**Detection for {t}:**
+
+{d}
+
+Use CSPM tools: Security Hub, Defender for Cloud.","d"),
+         m(f"Fix: {t}?",f"**Fix for {t}:**
+
+{f}
+
+Use IaC with policy-as-code guardrails.","f"),
+         m(f"Context: {t}?",f"**{t} Context:**
+
+{x}
+
+Cloud misconfigs are #1 cause of cloud breaches.","c")]
+def gi(i):
+    t,s,d,f,x=i
+    return [m(f"IR: {t}. {s}. Analysis?",f"**IR: {t}**
+
+{f}
+
+
+**Why this matters:** {x}","a"),
+         m(f"Detect {t} during incident?",f"**Detection:**
+
+{d}
+
+Correlate SIEM, EDR, network telemetry. Time is critical.","d"),
+         m(f"Containment and fix for {t}?",f"**Containment + Fix:**
+
+{f}
+
+Follow IR playbook. Document actions. Preserve evidence.","f"),
+         m(f"Context: {t} in IR?",f"**{t} Context:**
+
+{x}
+
+Increasingly common. Tabletop exercises help teams respond faster.","c")]
+n=[]
+for c in C: n.extend(gc(c))
+for o in O: n.extend(go(o))
+for c in L: n.extend(gl(c))
+for i in I: n.extend(gi(i))
+print(f"New pairs: {len(n)}")
+e=[]
+try:
+    p=hf_hub_download(repo_id=DS,repo_type="dataset",filename="dpo.jsonl",token=T)
+    with open(p) as f:
+        for l in f:
+            l=l.strip()
+            if l: e.append(json.loads(l))
+    print(f"Existing: {len(e)}")
+except Exception as ex:
+    print(f"Download failed: {ex}")
+a=e+n
+s=set()
+u=[]
+for p in a:
+    k=p["prompt"][:200]
+    if k not in s: s.add(k);u.append(p)
+print(f"Unique: {len(u)}")
+sf=[{"instruction":p["prompt"],"input":"","output":p["chosen"]} for p in u]
+d="/tmp/kin-v4"
+os.makedirs(d,exist_ok=True)
+for fn,dt in [("dpo.jsonl",u),("train.jsonl",u),("sft.jsonl",sf)]:
+    with open(f"{d}/{fn}","w") as f:
+        for p in dt: f.write(json.dumps(p)+"
+")
+rc=f"""---
+language: en
+license: apache-2.0
+size_categories: 1K<n<10K
+tags: [cybersecurity, dpo, vulnerability, security, zero-hallucination, CVE, MITRE-ATTACK, OWASP, cloud-security, incident-response, malware-analysis, secure-coding]
+---
+
+# KIN Cybersecurity DPO Dataset v4
+
+Preference-optimized cybersecurity training data for zero-hallucination vulnerability analysis.
+
+## Stats
+- DPO pairs: {len(u)}
+- SFT pairs: {len(sf)}
+- New in v4: {len(n)} pairs (20 CVEs, 5 OWASP, 5 cloud, 5 IR)
+
+## Format
+### dpo.jsonl / train.jsonl
+DPO format: prompt, chosen, rejected. Chosen: precise analysis with specific tools and fixes. Rejected: vague, hedging responses.
+### sft.jsonl
+SFT format: instruction, input, output.
+"""
+try:
+    rp=f"{d}/README.md"
+    with open(rp,"w") as f: f.write(rc)
+    api.upload_folder(folder_path=d,repo_id=DS,repo_type="dataset",token=T,commit_message=f"v4: {len(u)} DPO + {len(sf)} SFT pairs",allow_patterns=["*.jsonl","*.md"])
+    print(f"[OK] upload_folder ({len(u)} DPO + {len(sf)} SFT)")
+except Exception as ex:
+    print(f"[FAIL] upload_folder: {ex}")
+    for fn in ["dpo.jsonl","train.jsonl","sft.jsonl","README.md"]:
+        try:
+            ct=len(u) if fn!="sft.jsonl" else len(sf)
+            api.upload_file(path_or_fileobj=f"{d}/{fn}",path_in_repo=fn,repo_id=DS,repo_type="dataset",token=T,commit_message=f"v4: {ct} pairs")
+            print(f"[OK] {fn} ({ct})")
+        except Exception as ex2:
+            print(f"[FAIL] {fn}: {ex2}")
+print(f"Done: {len(u)} DPO pairs")
