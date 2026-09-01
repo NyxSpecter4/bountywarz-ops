@@ -14,18 +14,16 @@ jobs:
           python-version: '3.11'
       - name: Apply fixes to train_v5.py
         run: |
+          set -x
           python kin-gguf/fix_v5.py > /tmp/fix_output.txt 2>&1
           FIX_STATUS=$?
           cat /tmp/fix_output.txt
-          if [ $FIX_STATUS -ne 0 ]; then
-            gh pr comment 36 --body "FIX SCRIPT FAILED: $(cat /tmp/fix_output.txt)" || true
-            exit 1
-          fi
           python -m py_compile kin-gguf/train_v5.py > /tmp/compile_output.txt 2>&1
           COMPILE_STATUS=$?
           cat /tmp/compile_output.txt
-          if [ $COMPILE_STATUS -ne 0 ]; then
-            gh pr comment 36 --body "PY_COMPILE FAILED: $(cat /tmp/compile_output.txt)" || true
+          if [ $FIX_STATUS -ne 0 ] || [ $COMPILE_STATUS -ne 0 ]; then
+            BODY=$(printf "Fix exit: %s\nCompile exit: %s\n---Fix output---\n%s\n---Compile output---\n%s" "$FIX_STATUS" "$COMPILE_STATUS" "$(cat /tmp/fix_output.txt)" "$(cat /tmp/compile_output.txt)")
+            curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/NyxSpecter4/bountywarz-ops/issues/36/comments -d "$(printf '{"body":"%s"}' "$(echo "$BODY" | sed 's/"/\\\"/g' | tr '\n' ' ' | head -c 4000)")"
             exit 1
           fi
           echo "Fix and compile OK"
@@ -35,11 +33,13 @@ jobs:
       - run: pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
       - name: Run v5 training
         run: |
+          set -x
           python kin-gguf/train_v5.py > /tmp/train_output.txt 2>&1
           TRAIN_STATUS=$?
           cat /tmp/train_output.txt
           if [ $TRAIN_STATUS -ne 0 ]; then
-            gh pr comment 36 --body "TRAINING FAILED (last 50 lines): $(tail -50 /tmp/train_output.txt)" || true
+            BODY=$(tail -50 /tmp/train_output.txt | sed 's/"/\\\"/g' | tr '\n' ' ' | head -c 4000)
+            curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/NyxSpecter4/bountywarz-ops/issues/36/comments -d "$(printf '{"body":"TRAINING FAILED: %s"}' "$BODY")"
             exit 1
           fi
         env:
