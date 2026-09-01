@@ -31,16 +31,11 @@ jobs:
 
       - name: Verify GPU availability
         id: gpu
+        continue-on-error: true
         run: |
-          python -c "
-          import torch
-          if torch.cuda.is_available():
-              print('GPU_AVAILABLE=true')
-              echo 'gpu=true' >> $GITHUB_OUTPUT
-          else:
-              print('GPU_AVAILABLE=false')
-              echo 'gpu=false' >> $GITHUB_OUTPUT
-          "
+          python -c "import torch; print('GPU available' if torch.cuda.is_available() else 'CPU only')"
+          GPU_FLAG=$(python -c "import torch; print('true' if torch.cuda.is_available() else 'false')")
+          echo "gpu=$GPU_FLAG" >> $GITHUB_OUTPUT
 
       # --- Lockdown: ensure only 3 repos are public ---
       - name: Lockdown HF repos
