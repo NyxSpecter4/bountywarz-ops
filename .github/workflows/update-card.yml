@@ -1,0 +1,18 @@
+name: update-card
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  update-card:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: contains(github.event.pull_request.head.ref, 'card')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests huggingface_hub
+      - run: python kin-gguf/update_card.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}

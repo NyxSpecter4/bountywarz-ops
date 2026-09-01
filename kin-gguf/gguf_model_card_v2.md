@@ -87,7 +87,7 @@ KIN was trained with a specific system prompt. Using a different prompt will deg
 
 | Model | Base | Size | Downloads | Training Pairs | Runs on Laptop | GGUF |
 |-------|------|------|-----------|----------------|----------------|------|
-| **KIN** | Qwen2.5-3B | 2-3 GB | Growing | 550+ DPO | Yes (2GB RAM) | Yes |
+| **KIN** | Qwen2.5-3B | 2-3 GB | Growing | 1,331 DPO | Yes (2GB RAM) | Yes |
 | Mohamedabul/Qwen2.5-3B-CyberSecurity | Qwen2.5-3B | 6 GB | 3.5K | 187K | Needs 8GB+ | No |
 | AlicanKiraz0/Cybersecurity-BaronLLM | Qwen3.6-35B | 70+ GB | 11.5K | N/A | No | No |
 | RichardErkhov/Lily-Cybersecurity-GGUF | Mistral-7B | 4-5 GB | 5.2K | 22K | Yes (4GB) | Yes |
@@ -101,7 +101,7 @@ KIN was trained with a specific system prompt. Using a different prompt will deg
 
 ## Training Data
 
-[nyxspecter4/kin-cyber-dpo-v2](https://huggingface.co/datasets/nyxspecter4/kin-cyber-dpo-v2) -- 550+ cybersecurity DPO pairs with chosen (sharp, specific) and rejected (vague, hedging) responses.
+[nyxspecter4/kin-cyber-dpo-v2](https://huggingface.co/datasets/nyxspecter4/kin-cyber-dpo-v2) -- 1,331 cybersecurity DPO pairs covering 50 real CVEs, 30 MITRE ATT&CK techniques, and 20 security concepts. Each pair has a chosen (sharp, specific) and rejected (vague, hedging) response.
 
 ## Live Demo
 
