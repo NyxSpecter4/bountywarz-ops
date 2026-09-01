@@ -1,27 +1,22 @@
 ---
-title: KIN Cybersecurity AI
-emoji: 🛡️
+title: KIN — Flagship Cybersecurity AI Partner
+emoji: 🛡
 colorFrom: blue
-colorTo: cyan
+colorTo: indigo
 sdk: gradio
-sdk_version: "4.44.0"
+sdk_version: 4.44.0
 app_file: app.py
 pinned: true
+license: apache-2.0
 tags:
   - cybersecurity
-  - gguf
-  - llama-cpp
-  - ollama
+  - security
+  - vulnerability-analysis
+  - DPO
 ---
 
-# KIN -- Cybersecurity AI Partner
+# KIN — Flagship Cybersecurity AI Partner
 
-Live cybersecurity AI powered by KIN (fine-tuned Qwen2.5-3B-Instruct, GGUF Q4_K_M).
+Live interactive partner for vulnerability triage, contract-violation auditing, and companion patch generation.
 
-Features:
-- Live Security Partner chat
-- Code and CVE Auditor
-- Model info and local run instructions
-
-Model: https://huggingface.co/nyxspecter4/kin-sft-lora-gguf
-Dataset: https://huggingface.co/datasets/nyxspecter4/kin-cyber-dpo-v2
+KIN is a DPO-fine-tuned Qwen2.5-3B-Instruct model that answers security questions like a senior engineer at a bar — direct, opinionated, and specific. Names real tools, CVEs, and incidents.
