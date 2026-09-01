@@ -1,0 +1,18 @@
+name: train-lora
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: contains(github.event.pull_request.head.ref, 'train')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch transformers peft trl datasets huggingface_hub accelerate
+      - run: python kin-gguf/train_v5.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
