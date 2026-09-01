@@ -6,14 +6,60 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Fix train_v5.py syntax and add CPU compatibility
+        run: |
+          cat > /tmp/fix_v5.py << 'PYEOF'
+          with open('kin-gguf/train_v5.py', 'r') as f:
+              c = f.read()
+          # Fix 1: Escape unescaped quotes in NoSQL injection pair (syntax error)
+          c = c.replace(
+              '{"user_id":123,"email":"admin@target.com","role":"user"}',
+              '{\\"user_id\\":123,\\"email\\":\\"admin@target.com\\",\\"role\\":\\"user\\"}'
+          )
+          # Fix 2: Remove max_prompt_length (unsupported in installed TRL)
+          c = c.replace('        max_prompt_length=512,\n', '')
+          # Fix 3: Add max_steps for CPU to avoid timeout
+          c = c.replace(
+              '        num_train_epochs=1,\n',
+              '        num_train_epochs=1,\n        max_steps=100 if not torch.cuda.is_available() else -1,\n'
+          )
+          # Fix 4: GPU-adaptive model selection (use 0.5B on CPU, 3B on GPU)
+          c = c.replace(
+              '    print("Loading tokenizer...")\n    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, token=T)',
+              '    base_model = BASE_MODEL if torch.cuda.is_available() else "Qwen/Qwen2.5-0.5B-Instruct"\n    if not torch.cuda.is_available():\n        print("No GPU -- using 0.5B base for CPU-feasible training")\n    print(f"Training base: {base_model}")\n    print("Loading tokenizer...")\n    tokenizer = AutoTokenizer.from_pretrained(base_model, token=T)'
+          )
+          # Fix 4b: Use base_model in model loading + adaptive dtype
+          c = c.replace(
+              '        BASE_MODEL,\n        torch_dtype=torch.float16,\n        device_map="auto",\n        token=T,',
+              '        base_model,\n        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,\n        device_map="auto",\n        token=T,'
+          )
+          # Fix 4c: Adaptive batch size and max_length for CPU
+          c = c.replace(
+              '        per_device_train_batch_size=2,\n        gradient_accumulation_steps=8,',
+              '        per_device_train_batch_size=2 if torch.cuda.is_available() else 1,\n        gradient_accumulation_steps=8 if torch.cuda.is_available() else 2,'
+          )
+          c = c.replace(
+              '        max_length=1024,',
+              '        max_length=1024 if torch.cuda.is_available() else 512,'
+          )
+          # Fix 4d: Update model card to show actual base model used
+          c = c.replace('base_model: {BASE_MODEL}', 'base_model: {base_model}')
+          c = c.replace('- Base model: {BASE_MODEL}', '- Base model: {base_model}')
+          c = c.replace('"{BASE_MODEL}"', '"{base_model}"')
+          with open('kin-gguf/train_v5.py', 'w') as f:
+              f.write(c)
+          print('All fixes applied to train_v5.py')
+          PYEOF
+          python /tmp/fix_v5.py
       - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
       - run: pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
-      - run: python kin-gguf/train_lora.py
+      - name: Run v5 training (data generation + dataset upload + DPO training + adapter upload)
+        run: python kin-gguf/train_v5.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
