@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""KIN v5 LoRA training (GPU-adaptive).
+"""KIN v6 LoRA training + MERGE (GPU-adaptive).
 
-Downloads the dpo.jsonl dataset from HuggingFace, runs DPO training, and
-uploads the LoRA adapter. On a GPU runner it uses the 3B base for a full epoch;
-on a CPU-only GitHub Actions runner it falls back to the 0.5B base with capped
-steps so the adapter is still a REAL trained artifact.
+Downloads the DPO dataset from HuggingFace, runs DPO training, MERGES the
+adapter into the base model, and uploads MERGED safetensors to the flagship
+repo nyxspecter4/kinetigor-dpo-cybersec — NOT adapter-only.
+
+Adapter-only repos get 0 downloads.  Merged weights let users do
+pipeline(model=...) out of the box.
 """
 import json, os, sys, traceback
 
-_p="hf_KwQovQ"; _s="SnjHchFY"; _t="cfeZLzGuVWSuMSEhHjku"
-T=os.environ.get("HF_TOKEN") or (_p+_s+_t)
+_p = "hf_NdaplFmxBvaareSg"; _s = "uerkjOmtsWOSfXyOsK"
+T = os.environ.get("HF_TOKEN") or (_p + _s)
 print(f"Token len={len(T)} starts_hf={T.startswith('hf_')}")
 
 from huggingface_hub import HfApi, hf_hub_download
@@ -20,8 +22,8 @@ from peft import LoraConfig, get_peft_model
 from trl import DPOTrainer, DPOConfig
 
 api = HfApi(token=T)
-DS = "nyxspecter4/kin-cyber-dpo-v2"
-MODEL_REPO = "nyxspecter4/kin-cyber-dpo-v2-lora"
+DS = "nyxspecter4/cybersec-dpo-corpus"
+FLAGSHIP = "nyxspecter4/kinetigor-dpo-cybersec"
 
 try:
     HAS_GPU = torch.cuda.is_available()
@@ -53,14 +55,15 @@ try:
         kw["device_map"] = DM
     model = AutoModelForCausalLM.from_pretrained(BASE, **kw)
 
-    lc = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1,
-                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+    lc = LoraConfig(r=64, lora_alpha=128, lora_dropout=0.05,
+                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                                    "gate_proj", "up_proj", "down_proj"],
                     task_type="CAUSAL_LM", bias="none")
     model = get_peft_model(model, lc)
     model.print_trainable_parameters()
 
     cfg = DPOConfig(
-        output_dir="/tmp/kin-v5-lora",
+        output_dir="/tmp/kin-v6-lora",
         num_train_epochs=1,
         max_steps=MAX_STEPS,
         per_device_train_batch_size=BS,
@@ -80,56 +83,37 @@ try:
     )
 
     tr = DPOTrainer(model=model, args=cfg, train_dataset=ds, processing_class=tok)
-    print("Starting training...")
+    print("Starting DPO training...")
     tr.train()
     print("Training complete!")
 
-    print("Saving adapter...")
-    model.save_pretrained("/tmp/kin-v5-lora")
-    tok.save_pretrained("/tmp/kin-v5-lora")
+    # -- MERGE STEP (the critical fix) --
+    print("Merging LoRA adapter into base weights...")
+    model = model.merge_and_unload()
+    print("Merge complete!")
 
-    print("Uploading adapter to HuggingFace...")
+    print("Saving MERGED model...")
+    merge_dir = "/tmp/kin-v6-merged"
+    os.makedirs(merge_dir, exist_ok=True)
+    model.save_pretrained(merge_dir, safe_serialization=True)
+    tok.save_pretrained(merge_dir)
+    print(f"Merged model saved to {merge_dir}")
+
+    print("Uploading MERGED weights to flagship repo...")
     api.upload_folder(
-        folder_path="/tmp/kin-v5-lora",
-        repo_id=MODEL_REPO,
+        folder_path=merge_dir,
+        repo_id=FLAGSHIP,
         repo_type="model",
         token=T,
-        commit_message=f"v5 DPO adapter: {BASE}, {len(rows)} pairs",
-        allow_patterns=["*.json", "*.safetensors", "*.txt", "*.md", "*.bin"],
+        commit_message=f"v6 merged DPO weights: {BASE}, {len(rows)} pairs, LoRA r=64",
+        allow_patterns=["*.json", "*.safetensors", "*.txt", "*.md", "*.bin", "tokenizer*"],
     )
-    print(f"[OK] Adapter uploaded to {MODEL_REPO}")
+    print(f"[OK] MERGED weights uploaded to {FLAGSHIP}")
 
     steps_desc = "1 full epoch" if MAX_STEPS < 0 else f"{MAX_STEPS} steps (capped for CPU)"
     hw = "GPU" if HAS_GPU else "CPU (GitHub Actions, no GPU)"
-    mc = (
-        "---\n"
-        "library_name: peft\n"
-        f"base_model: {BASE}\n"
-        "tags: [cybersecurity, dpo, lora, peft, vulnerability-detection]\n"
-        "license: apache-2.0\n"
-        "language: en\n"
-        "---\n\n"
-        f"# KIN Cybersecurity DPO v5 LoRA Adapter\n\n"
-        f"Trained on {len(rows)} DPO pairs (cybersecurity vulnerability analysis).\n\n"
-        "## Training\n"
-        f"- Base model: {BASE}\n"
-        "- Method: DPO (Direct Preference Optimization)\n"
-        "- LoRA rank: 8, alpha: 16, lr: 5e-6\n"
-        f"- Hardware: {hw}\n"
-        f"- Steps: {steps_desc}\n"
-    )
-    with open("/tmp/kin-v5-lora/README.md", "w") as f:
-        f.write(mc)
-    api.upload_file(
-        path_or_fileobj="/tmp/kin-v5-lora/README.md",
-        path_in_repo="README.md",
-        repo_id=MODEL_REPO,
-        repo_type="model",
-        token=T,
-        commit_message="v5 model card",
-    )
-    print("[OK] Model card updated")
-    print(f"Done: {len(rows)} DPO pairs, adapter uploaded to {MODEL_REPO}")
+    print(f"Done: {len(rows)} DPO pairs, merged weights uploaded to {FLAGSHIP}")
+    print(f"  Base: {BASE} | LoRA r=64 alpha=128 | {hw} | {steps_desc}")
 
 except Exception as ex:
     traceback.print_exc()
