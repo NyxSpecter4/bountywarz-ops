@@ -1,36 +1,16 @@
 import gradio as gr
 import os
-import sys
-from huggingface_hub import hf_hub_download
+from huggingface_hub import InferenceClient
 
-print("=== KIN Cybersecurity Space ===", flush=True)
-print("Downloading KIN GGUF model (Q4_K_M, ~2GB)...", flush=True)
-
-MODEL_REPO = "nyxspecter4/kin-sft-lora-gguf"
-MODEL_FILE = "kin-sft-lora-Q4_K_M.gguf"
+HF_TOKEN = os.environ.get("HF_TOKEN")
+MODEL_ID = "nyxspecter4/kin-sft-lora-gguf"
 
 try:
-    model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
-    print(f"Model downloaded: {model_path}", flush=True)
+    client = InferenceClient(MODEL_ID, token=HF_TOKEN)
+    print(f"InferenceClient initialized for {MODEL_ID}", flush=True)
 except Exception as e:
-    print(f"ERROR downloading model: {e}", flush=True)
-    sys.exit(1)
-
-from llama_cpp import Llama
-
-try:
-    llm = Llama(
-        model_path=model_path,
-        n_ctx=4096,
-        n_threads=2,
-        n_batch=512,
-        verbose=False,
-        use_mmap=True,
-    )
-    print("KIN model loaded successfully!", flush=True)
-except Exception as e:
-    print(f"ERROR loading model: {e}", flush=True)
-    sys.exit(1)
+    print(f"Warning: InferenceClient init: {e}", flush=True)
+    client = None
 
 SYSTEM_PROMPT = (
     "You are KIN -- a sharp cybersecurity AI partner. Direct, opinionated, specific. "
@@ -44,27 +24,37 @@ SYSTEM_PROMPT = (
 def chat_response(message, history):
     if not message.strip():
         return ""
+    if client is None:
+        yield "KIN model is initializing. Please try again in a moment."
+        return
+
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for user_msg, bot_msg in history:
         messages.append({"role": "user", "content": user_msg})
         messages.append({"role": "assistant", "content": bot_msg})
     messages.append({"role": "user", "content": message})
 
-    response = ""
-    for chunk in llm.create_chat_completion(
-        messages=messages,
-        max_tokens=600,
-        temperature=0.6,
-        stream=True,
-    ):
-        delta = chunk["choices"][0].get("delta", {}).get("content", "")
-        response += delta
-        yield response
+    try:
+        response = ""
+        for chunk in client.chat_completion(
+            messages=messages,
+            max_tokens=600,
+            temperature=0.6,
+            stream=True,
+        ):
+            delta = chunk.choices[0].delta.content or ""
+            response += delta
+            yield response
+    except Exception as e:
+        yield f"KIN encountered an error. Please try again. (Debug: {str(e)[:200]})"
 
 
 def audit_code(code_input):
     if not code_input.strip():
         yield "Please provide a code snippet, configuration, or error trace to audit."
+        return
+    if client is None:
+        yield "KIN model is initializing. Please try again in a moment."
         return
 
     audit_prompt = (
@@ -83,16 +73,19 @@ def audit_code(code_input):
         {"role": "user", "content": audit_prompt},
     ]
 
-    response = ""
-    for chunk in llm.create_chat_completion(
-        messages=messages,
-        max_tokens=800,
-        temperature=0.3,
-        stream=True,
-    ):
-        delta = chunk["choices"][0].get("delta", {}).get("content", "")
-        response += delta
-        yield response
+    try:
+        response = ""
+        for chunk in client.chat_completion(
+            messages=messages,
+            max_tokens=800,
+            temperature=0.3,
+            stream=True,
+        ):
+            delta = chunk.choices[0].delta.content or ""
+            response += delta
+            yield response
+    except Exception as e:
+        yield f"Audit error. Please try again. (Debug: {str(e)[:200]})"
 
 
 custom_css = (
@@ -148,7 +141,7 @@ with gr.Blocks(
             "(https://huggingface.co/datasets/nyxspecter4/kin-cyber-dpo-v2)\n"
             "- GGUF: [nyxspecter4/kin-sft-lora-gguf]"
             "(https://huggingface.co/nyxspecter4/kin-sft-lora-gguf)\n"
-            "- Runtime: Q4_K_M on CPU (llama.cpp)\n\n"
+            "- Quantization: Q4_K_M (2GB) + Q8_0 (3.3GB)\n\n"
             "### Run KIN Locally with Ollama\n\n"
             "    ollama run hf.co/nyxspecter4/kin-sft-lora-gguf:Q4_K_M\n"
         )
