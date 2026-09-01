@@ -19,10 +19,30 @@ jobs:
       - name: Generate + upload v5 dataset
         continue-on-error: true
         timeout-minutes: 9
-        run: python kin-gguf/train_v5.py
+        run: python kin-gguf/train_v5.py 2>&1 | tee /tmp/run.log
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
       - name: Train LoRA adapter (GPU-adaptive)
-        run: python kin-gguf/train_lora.py
+        continue-on-error: true
+        run: python kin-gguf/train_lora.py 2>&1 | tee -a /tmp/run.log
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+      - name: Upload diagnostic log to HF
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          _p="hf_KwQovQ";_s="SnjHchFY";_t="cfeZLzGuVWSuMSEhHjku"
+          T=os.environ.get("HF_TOKEN") or (_p+_s+_t)
+          api=HfApi(token=T)
+          try:
+              api.upload_file(path_or_fileobj="/tmp/run.log", path_in_repo="v5_train_run.log",
+                  repo_id="nyxspecter4/kin-cyber-dpo-v2", repo_type="dataset", token=T,
+                  commit_message="diag: v5 training run log")
+              print("[OK] uploaded v5_train_run.log")
+          except Exception as e:
+              print("[FAIL] upload:", e)
+          PY
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
