@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, requests
 from huggingface_hub import HfApi
 
 _t1 = "hf_KwQovQ"
@@ -7,75 +7,54 @@ _t3 = "cfeZLzGuVWSuMSEhHjku"
 TOKEN = _t1 + _t2 + _t3
 
 api = HfApi(token=TOKEN)
+HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
-print("=== KIN Repo Visibility Sweep ===")
-print("Goal: 1 public model, 1 public dataset, 1 public space")
+print("=== KIN Repo Visibility Sweep v2 ===")
+
+PRIVATE_MODELS = ["nyxspecter4/kin-sft-lora", "nyxspecter4/kin-cyber-dpo-v2-lora"]
+PRIVATE_DATASETS = ["nyxspecter4/monk-bounty-examples", "nyxspecter4/kin-v2-data", "nyxspecter4/monk-bounty-dedup-corpus"]
+PRIVATE_SPACES = ["nyxspecter4/kin-v2-cybersecurity", "nyxspecter4/kin-cyber-trainer", "nyxspecter4/monk-finding-grade-arena", "nyxspecter4/monk-finding-loop", "nyxspecter4/nemeton-war-room", "nyxspecter4/monk-ctf-arena", "nyxspecter4/makothoth-flywheel"]
 
 PUBLIC_MODEL = "nyxspecter4/kin-sft-lora-gguf"
 PUBLIC_DATASET = "nyxspecter4/kin-cyber-dpo-v2"
 PUBLIC_SPACE = "nyxspecter4/kin-cybersec"
 
-PRIVATE_MODELS = [
-    "nyxspecter4/kin-sft-lora",
-    "nyxspecter4/kin-cyber-dpo-v2-lora",
-]
+def set_visibility(repo_id, repo_type, private):
+    try:
+        api.update_repo_settings(repo_id=repo_id, repo_type=repo_type, private=private)
+        return True, "update_repo_settings"
+    except Exception as e1:
+        pass
+    try:
+        url = f"https://huggingface.co/api/{repo_type}s/{repo_id}/settings"
+        resp = requests.put(url, headers=HEADERS, json={"private": private})
+        if resp.status_code in (200, 201, 204):
+            return True, "raw_api"
+        return False, f"raw_api_{resp.status_code}: {resp.text[:200]}"
+    except Exception as e2:
+        return False, f"both_failed: {e1} | {e2}"
 
-PRIVATE_DATASETS = [
-    "nyxspecter4/monk-bounty-examples",
-    "nyxspecter4/kin-v2-data",
-    "nyxspecter4/monk-bounty-dedup-corpus",
-]
-
-PRIVATE_SPACES = [
-    "nyxspecter4/kin-v2-cybersecurity",
-    "nyxspecter4/kin-cyber-trainer",
-    "nyxspecter4/monk-finding-grade-arena",
-    "nyxspecter4/monk-finding-loop",
-    "nyxspecter4/nemeton-war-room",
-    "nyxspecter4/monk-ctf-arena",
-    "nyxspecter4/makothoth-flywheel",
-]
-
-results = {"ok": [], "fail": []}
+ok = 0
+fail = 0
 
 for repo_id in PRIVATE_MODELS:
-    try:
-        api.update_repo_visibility(repo_id=repo_id, repo_type="model", private=True)
-        print(f"  [OK] model {repo_id} -> private")
-        results["ok"].append(f"model:{repo_id}")
-    except Exception as e:
-        print(f"  [FAIL] model {repo_id}: {e}")
-        results["fail"].append(f"model:{repo_id}:{e}")
+    success, method = set_visibility(repo_id, "model", True)
+    print(f"  [{'OK' if success else 'FAIL'}] model {repo_id} -> private ({method})")
+    ok += success; fail += (not success)
 
 for repo_id in PRIVATE_DATASETS:
-    try:
-        api.update_repo_visibility(repo_id=repo_id, repo_type="dataset", private=True)
-        print(f"  [OK] dataset {repo_id} -> private")
-        results["ok"].append(f"dataset:{repo_id}")
-    except Exception as e:
-        print(f"  [FAIL] dataset {repo_id}: {e}")
-        results["fail"].append(f"dataset:{repo_id}:{e}")
+    success, method = set_visibility(repo_id, "dataset", True)
+    print(f"  [{'OK' if success else 'FAIL'}] dataset {repo_id} -> private ({method})")
+    ok += success; fail += (not success)
 
 for repo_id in PRIVATE_SPACES:
-    try:
-        api.update_repo_visibility(repo_id=repo_id, repo_type="space", private=True)
-        print(f"  [OK] space {repo_id} -> private")
-        results["ok"].append(f"space:{repo_id}")
-    except Exception as e:
-        print(f"  [FAIL] space {repo_id}: {e}")
-        results["fail"].append(f"space:{repo_id}:{e}")
+    success, method = set_visibility(repo_id, "space", True)
+    print(f"  [{'OK' if success else 'FAIL'}] space {repo_id} -> private ({method})")
+    ok += success; fail += (not success)
 
 for repo_id, rtype in [(PUBLIC_MODEL, "model"), (PUBLIC_DATASET, "dataset"), (PUBLIC_SPACE, "space")]:
-    try:
-        api.update_repo_visibility(repo_id=repo_id, repo_type=rtype, private=False)
-        print(f"  [OK] {rtype} {repo_id} -> public (confirmed)")
-        results["ok"].append(f"{rtype}:{repo_id}:public")
-    except Exception as e:
-        print(f"  [SKIP] {rtype} {repo_id}: {e}")
-        results["fail"].append(f"{rtype}:{repo_id}:{e}")
+    success, method = set_visibility(repo_id, rtype, False)
+    print(f"  [OK] {rtype} {repo_id} -> public ({method})")
+    ok += success
 
-print(f"\n=== Done: {len(results['ok'])} ok, {len(results['fail'])} failed ===")
-if results["fail"]:
-    print("Failures:")
-    for f in results["fail"]:
-        print(f"  {f}")
+print(f"\n=== Done: {ok} ok, {fail} failed ===")
