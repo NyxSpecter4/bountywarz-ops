@@ -1,20 +1,21 @@
-name: KIN Cybersecurity Training Pipeline
+name: KIN Cybersecurity LoRA Training Pipeline
 
 on:
   push:
-    branches:
-      - 'train*'
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    branches: [train-v5-lora]
+    paths:
+      - 'kin-gguf/train_sft.py'
+      - 'kin-gguf/train_dpo_v6.py'
+      - 'kin-gguf/train_grpo.py'
+      - 'kin-gguf/generate_sft_data.py'
+      - '.github/workflows/train-lora.yml'
 
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -25,76 +26,84 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install torch transformers peft trl datasets accelerate
-          pip install huggingface_hub
-          pip install sentencepiece protobuf
+          pip install torch transformers trl peft datasets huggingface_hub accelerate
 
-      - name: Verify GPU availability
+      - name: Verify GPU
         id: gpu
-        continue-on-error: true
         run: |
-          python -c "import torch; print('GPU available' if torch.cuda.is_available() else 'CPU only')"
-          GPU_FLAG=$(python -c "import torch; print('true' if torch.cuda.is_available() else 'false')")
-          echo "gpu=$GPU_FLAG" >> $GITHUB_OUTPUT
+          python -c "import torch; print(f'GPU available: {torch.cuda.is_available()}')"
+          if python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
+            echo "has_gpu=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_gpu=false" >> $GITHUB_OUTPUT
+          fi
 
-      # --- Lockdown: ensure only 3 repos are public ---
-      - name: Lockdown HF repos
-        id: lockdown
-        working-directory: kin-gguf
+      # Phase 1: SFT
+      - name: Phase 1 - SFT Training
         continue-on-error: true
-        run: |
-          python cleanup_visibility.py || echo "Lockdown script completed (may have warnings)"
-
-      # --- Phase 1: SFT ---
-      - name: Generate SFT data
-        id: sft-data
         working-directory: kin-gguf
-        continue-on-error: true
         run: |
           python generate_sft_data.py
-
-      - name: Phase 1 - SFT Training
-        id: sft-training
-        working-directory: kin-gguf
-        continue-on-error: true
-        run: |
           python train_sft.py
 
-      # --- Phase 2: DPO with soft labels ---
-      - name: Phase 2 - DPO Training (GDPO-style soft labels)
-        id: dpo-training
-        working-directory: kin-gguf
+      # Phase 2: DPO with GDPO soft labels
+      - name: Phase 2 - DPO Training
         continue-on-error: true
-        run: |
-          python train_dpo_v6.py
-
-      # --- Phase 3: GRPO (GPU only) ---
-      - name: Phase 3 - GRPO Training (verifiable rewards)
-        id: grpo-training
         working-directory: kin-gguf
-        continue-on-error: true
-        run: |
-          python train_grpo.py
+        run: python train_dpo_v6.py
 
-      # --- Post-training: update Space ---
-      - name: Update Space
-        id: update-space
+      # Phase 3: GRPO with verifiable rewards
+      - name: Phase 3 - GRPO Training
+        continue-on-error: true
         working-directory: kin-gguf
-        continue-on-error: true
-        run: |
-          python update_space.py || echo "Space update skipped"
+        run: python train_grpo.py
 
-      # --- Summary ---
-      - name: Pipeline summary
+      # Upload error files as artifacts for diagnostics
+      - name: Upload error files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-errors
+          path: |
+            kin-gguf/sft_error.txt
+            kin-gguf/dpo_error.txt
+            kin-gguf/grpo_error.txt
+          if-no-files-found: ignore
+
+      # Upload training outputs
+      - name: Upload training outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-outputs
+          path: |
+            kin-gguf/sft_output/
+            kin-gguf/dpo_v6_output/
+            kin-gguf/grpo_output/
+          if-no-files-found: ignore
+
+      - name: Pipeline Summary
         if: always()
         run: |
-          echo "## KIN Cybersecurity Training Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Lockdown | ${{ steps.lockdown.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SFT Data Generation | ${{ steps.sft-data.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SFT Training (Phase 1) | ${{ steps.sft-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| DPO Training (Phase 2) | ${{ steps.dpo-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GRPO Training (Phase 3) | ${{ steps.grpo-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Space Update | ${{ steps.update-space.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "=== KIN Cybersecurity Training Pipeline Summary ==="
+          echo "GPU available: ${{ steps.gpu.outputs.has_gpu }}"
+          echo ""
+          echo "--- Error files ---"
+          for f in sft_error.txt dpo_error.txt grpo_error.txt; do
+            if [ -f "kin-gguf/$f" ]; then
+              echo "[$f] FAILED:"
+              cat "kin-gguf/$f"
+              echo ""
+            else
+              echo "[$f] No error file (may have succeeded or not reached this phase)"
+            fi
+          done
+          echo ""
+          echo "--- SFT output ---"
+          ls -la kin-gguf/sft_output/ 2>/dev/null || echo "No SFT output"
+          echo ""
+          echo "--- DPO output ---"
+          ls -la kin-gguf/dpo_v6_output/ 2>/dev/null || echo "No DPO output"
+          echo ""
+          echo "--- GRPO output ---"
+          ls -la kin-gguf/grpo_output/ 2>/dev/null || echo "No GRPO output"
