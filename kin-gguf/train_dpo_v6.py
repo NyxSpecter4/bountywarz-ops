@@ -172,6 +172,9 @@ def prepare_dpo_dataset(pairs):
         rejected = pair.get("rejected", pair.get("response_rejected", ""))
         if not prompt or not chosen or not rejected:
             continue
+        # Filter out overly long prompts (replaces removed max_prompt_length param)
+        if len(prompt) > MAX_PROMPT_LENGTH * 4:  # rough char-to-token ratio
+            continue
         soft_label = compute_soft_label(chosen, rejected)
         label_stats.append(soft_label)
         data.append({
@@ -180,9 +183,10 @@ def prepare_dpo_dataset(pairs):
             "rejected": rejected,
         })
 
+    skipped = len(pairs) - len(data)
     if label_stats:
         avg = sum(label_stats) / len(label_stats)
-        print(f"Prepared {len(data)} DPO pairs. Avg soft label: {avg:.3f}")
+        print(f"Prepared {len(data)} DPO pairs (skipped {skipped}). Avg soft label: {avg:.3f}")
     return Dataset.from_list(data)
 
 
@@ -230,6 +234,9 @@ def main():
         dpo_dataset = prepare_dpo_dataset(pairs)
 
         # DPO config
+        # NOTE: max_prompt_length was removed in trl 0.29.0+. We filter long
+        # prompts from the dataset in prepare_dpo_dataset() instead.
+        # See: https://github.com/huggingface/trl/issues/5018
         dpo_config = DPOConfig(
             output_dir=OUTPUT_DIR,
             beta=BETA,
@@ -242,7 +249,6 @@ def main():
             save_steps=200,
             save_total_limit=2,
             max_length=MAX_LENGTH,
-            max_prompt_length=MAX_PROMPT_LENGTH,
             report_to="none",
             fp16=GPU_AVAILABLE,
             gradient_checkpointing=GPU_AVAILABLE,

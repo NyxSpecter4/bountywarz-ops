@@ -231,6 +231,7 @@ def main():
         model.print_trainable_parameters()
 
         # GRPO config
+        # NOTE: max_new_tokens was renamed to max_completion_length in recent trl.
         grpo_config = GRPOConfig(
             output_dir=OUTPUT_DIR,
             num_train_epochs=NUM_EPOCHS,
@@ -241,7 +242,7 @@ def main():
             logging_steps=5,
             save_steps=50,
             save_total_limit=2,
-            max_new_tokens=MAX_NEW_TOKENS,
+            max_completion_length=MAX_NEW_TOKENS,
             num_generations=NUM_GENERATIONS,
             report_to="none",
             fp16=True,
