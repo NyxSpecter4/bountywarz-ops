@@ -12,9 +12,51 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
-      - run: python -c "import py_compile; py_compile.compile('kin-gguf/train_v5_final.py', doraise=True)"
-      - run: python kin-gguf/train_v5_final.py
+      - run: pip install --no-cache-dir huggingface_hub
+      - name: Check if adapter already exists
+        id: check
+        run: |
+          python -c "
+          import os
+          from huggingface_hub import HfApi
+          T = os.environ.get('HF_TOKEN', '')
+          api = HfApi(token=T) if T else HfApi()
+          try:
+              info = api.repo_info('nyxspecter4/kin-cyber-dpo-v2-lora', files_metadata=True)
+              files = [s.rfilename for s in info.siblings]
+              has_adapter = 'adapter_model.safetensors' in files and 'README.md' in files
+              r = api.hf_hub_download(repo_id='nyxspecter4/kin-cyber-dpo-v2-lora', filename='README.md', token=T) if T else None
+              if r:
+                  with open(r) as f: c = f.read()
+                  has_adapter = has_adapter and 'v5 New Categories' in c
+              print(f'skip={"true" if has_adapter else "false"}')
+          except Exception as e:
+              print('skip=false')
+          " >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+      - name: Skip training (adapter already exists)
+        if: steps.check.outputs.skip == 'true'
+        run: echo "Adapter already trained, skipping training"
+      - name: Train (adapter not yet uploaded)
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
+          python -c "import py_compile; py_compile.compile('kin-gguf/train_v5_final.py', doraise=True)"
+          python kin-gguf/train_v5_final.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+  update-space:
+    needs: train
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --no-cache-dir huggingface_hub
+      - run: python kin-gguf/update_space.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
