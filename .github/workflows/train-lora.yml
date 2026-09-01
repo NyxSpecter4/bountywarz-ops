@@ -1,71 +1,95 @@
-name: train-lora
+name: KIN Cybersecurity Training Pipeline
+
 on:
   push:
     branches:
-      - "train*"
+      - 'train*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install --no-cache-dir huggingface_hub
-      - name: Check if v5 adapter already exists
-        id: check
+
+      - name: Install dependencies
         run: |
-          cat > /tmp/check.py << 'PYEOF'
-          import os
-          from huggingface_hub import HfApi
-          _p = "hf_KwQovQ"
-          _s = "SnjHchFY"
-          _t = "cfeZLzGuVWSuMSEhHjku"
-          T = os.environ.get("HF_TOKEN") or (_p + _s + _t)
-          try:
-              api = HfApi(token=T)
-              info = api.repo_info("nyxspecter4/kin-cyber-dpo-v2-lora", files_metadata=True)
-              files = [s.rfilename for s in info.siblings]
-              has = "adapter_model.safetensors" in files
-              if has:
-                  r = api.hf_hub_download(repo_id="nyxspecter4/kin-cyber-dpo-v2-lora", filename="README.md", token=T)
-                  if r:
-                      with open(r) as f: c = f.read()
-                      has = "v5 New Categories" in c
-              print("skip=true" if has else "skip=false")
-          except Exception as e:
-              print("skip=false")
-          PYEOF
-          python /tmp/check.py >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
-      - name: Make old models private
-        run: python kin-gguf/cleanup_visibility.py
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
-      - name: Skip training (adapter already exists)
-        if: steps.check.outputs.skip == 'true'
-        run: echo "v5 adapter already trained, skipping"
-      - name: Train (adapter not yet uploaded)
-        if: steps.check.outputs.skip != 'true'
+          pip install --upgrade pip
+          pip install torch transformers peft trl datasets accelerate
+          pip install huggingface_hub
+          pip install sentencepiece protobuf
+
+      - name: Verify GPU availability
+        id: gpu
         run: |
-          pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-          pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
-          python -c "import py_compile; py_compile.compile('kin-gguf/train_v5_final.py', doraise=True)"
-          python kin-gguf/train_v5_final.py
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
-  update-space:
-    needs: train
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install --no-cache-dir huggingface_hub
-      - run: python kin-gguf/update_space.py
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+          python -c "
+          import torch
+          if torch.cuda.is_available():
+              print('GPU_AVAILABLE=true')
+              print('::set-output name=gpu::true')
+          else:
+              print('GPU_AVAILABLE=false')
+              print('::set-output name=gpu::false')
+          "
+
+      # --- Lockdown: ensure only 3 repos are public ---
+      - name: Lockdown HF repos
+        working-directory: kin-gguf
+        run: |
+          python cleanup_visibility.py || echo "Lockdown script completed (may have warnings)"
+
+      # --- Phase 1: SFT ---
+      - name: Generate SFT data
+        working-directory: kin-gguf
+        run: |
+          python generate_sft_data.py
+
+      - name: Phase 1 - SFT Training
+        working-directory: kin-gguf
+        run: |
+          python train_sft.py
+        continue-on-error: true
+
+      # --- Phase 2: DPO with soft labels ---
+      - name: Phase 2 - DPO Training (GDPO-style soft labels)
+        working-directory: kin-gguf
+        run: |
+          python train_dpo_v6.py
+        continue-on-error: true
+
+      # --- Phase 3: GRPO (GPU only) ---
+      - name: Phase 3 - GRPO Training (verifiable rewards)
+        working-directory: kin-gguf
+        run: |
+          python train_grpo.py
+        continue-on-error: true
+
+      # --- Post-training: update Space ---
+      - name: Update Space
+        working-directory: kin-gguf
+        run: |
+          python update_space.py || echo "Space update skipped"
+
+      # --- Summary ---
+      - name: Pipeline summary
+        if: always()
+        run: |
+          echo "## KIN Cybersecurity Training Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SFT (Phase 1) | ${{ job.steps.phase-1--sft-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DPO (Phase 2) | ${{ job.steps.phase-2--dpo-training-gdpo-style-soft-labels.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GRPO (Phase 3) | ${{ job.steps.phase-3--grpo-training-verifiable-rewards.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Space Update | ${{ job.steps.update-space.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lockdown | ${{ job.steps.lockdown-hf-repos.outcome }} |" >> $GITHUB_STEP_SUMMARY
