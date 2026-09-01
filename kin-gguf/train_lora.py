@@ -38,8 +38,8 @@ try:
         BS = 1; GA = 2; DTYPE = torch.float32; DM = None
     print(f"Training base: {BASE}  GPU={HAS_GPU} max_steps={MAX_STEPS} max_len={MAX_LEN}")
 
-    print("Downloading dpo.jsonl from HF...")
-    p = hf_hub_download(repo_id=DS, filename="dpo.jsonl", repo_type="dataset", token=T)
+    print("Downloading train.jsonl from HF...")
+    p = hf_hub_download(repo_id=DS, filename="train.jsonl", repo_type="dataset", token=T)
     rows = [json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
     print(f"Loaded {len(rows)} DPO pairs")
     ds = Dataset.from_list([{"prompt": r["prompt"], "chosen": r["chosen"], "rejected": r["rejected"]} for r in rows])
