@@ -127,7 +127,7 @@ def main():
             save_total_limit=2,
             dataset_text_field="text",
             report_to="none",
-            fp16=GPU_AVAILABLE,
+            bf16=GPU_AVAILABLE,
             gradient_checkpointing=GPU_AVAILABLE,
             optim="adamw_torch",
             lr_scheduler_type="cosine",
