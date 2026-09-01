@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KIN Cybersecurity — Phase 1: SFT (Supervised Fine-Tuning)
+KIN Cybersecurity -- Phase 1: SFT (Supervised Fine-Tuning)
 =========================================================
 Trains a LoRA adapter on high-quality cybersecurity instruction pairs.
 
@@ -193,7 +193,7 @@ base_model: {BASE_MODEL}
 pipeline_tag: text-generation
 ---
 
-# KIN Cybersecurity Model — Phase 1: SFT
+# KIN Cybersecurity Model -- Phase 1: SFT
 
 ## Training Pipeline
 1. **Phase 1 (SFT)**: Supervised fine-tuning on {len(train_data)} high-quality cybersecurity instruction pairs

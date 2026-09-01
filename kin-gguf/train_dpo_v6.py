@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KIN Cybersecurity — Phase 2: DPO with Soft Preference Labels (GDPO-style)
+KIN Cybersecurity -- Phase 2: DPO with Soft Preference Labels (GDPO-style)
 =========================================================================
 Trains a DPO adapter using the existing 1,495 preference pairs from the
 kin-cyber-dpo-v2 dataset, enhanced with soft preference labels computed
@@ -375,14 +375,14 @@ base_model: {BASE_MODEL}
 pipeline_tag: text-generation
 ---
 
-# KIN Cybersecurity Model — Phase 2: DPO with Soft Preference Labels
+# KIN Cybersecurity Model -- Phase 2: DPO with Soft Preference Labels
 
 ## Training Pipeline
 1. **Phase 1 (SFT)**: Supervised fine-tuning on cybersecurity instruction pairs
 2. **Phase 2 (DPO)**: Direct Preference Optimization with GDPO-style soft labels (THIS MODEL)
 3. **Phase 3 (GRPO)**: Group Relative Policy Optimization with verifiable security rewards
 
-## GDPO — Geometric-Averaged DPO
+## GDPO -- Geometric-Averaged DPO
 This model uses soft preference labels instead of hard binary labels.
 Soft labels are computed from response quality signals:
 - Length appropriateness

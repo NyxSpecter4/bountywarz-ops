@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KIN Cybersecurity — Phase 3: GRPO with Verifiable Security Rewards
+KIN Cybersecurity -- Phase 3: GRPO with Verifiable Security Rewards
 ===================================================================
 Implements Group Relative Policy Optimization (GRPO) with a custom
 reward function that scores responses based on verifiable security
@@ -9,13 +9,13 @@ quality signals.
 This is the same training approach used by Inherent/Faraday:
   - Reinforcement learning with verifiable rewards (not preference pairs)
   - Reward function scores objective, checkable criteria
-  - No human preference labels needed — the reward IS the preference
+  - No human preference labels needed -- the reward IS the preference
 
 Reference: DeepSeek-R1 GRPO, Inherent Labs Faraday training methodology
            https://inherentlabs.ai/research/training-to-replicate
 
 Requirements:
-  - GPU (CUDA) — GRPO requires generating multiple completions per prompt
+  - GPU (CUDA) -- GRPO requires generating multiple completions per prompt
   - trl >= 0.12.0 (GRPOTrainer support)
   - vllm (optional, for faster generation)
 
@@ -366,14 +366,14 @@ base_model: {BASE_MODEL}
 pipeline_tag: text-generation
 ---
 
-# KIN Cybersecurity Model — Phase 3: GRPO with Verifiable Security Rewards
+# KIN Cybersecurity Model -- Phase 3: GRPO with Verifiable Security Rewards
 
 ## Training Pipeline
 1. **Phase 1 (SFT)**: Supervised fine-tuning on cybersecurity instruction pairs
 2. **Phase 2 (DPO)**: Direct Preference Optimization with GDPO-style soft labels
 3. **Phase 3 (GRPO)**: Group Relative Policy Optimization with verifiable rewards (THIS MODEL)
 
-## GRPO — Reinforcement Learning with Verifiable Rewards
+## GRPO -- Reinforcement Learning with Verifiable Rewards
 This model uses GRPO, the same training methodology as Inherent/Faraday.
 Instead of preference pairs, the model learns from objective, verifiable
 security quality signals:

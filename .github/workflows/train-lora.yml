@@ -36,47 +36,56 @@ jobs:
           import torch
           if torch.cuda.is_available():
               print('GPU_AVAILABLE=true')
-              print('::set-output name=gpu::true')
+              echo 'gpu=true' >> $GITHUB_OUTPUT
           else:
               print('GPU_AVAILABLE=false')
-              print('::set-output name=gpu::false')
+              echo 'gpu=false' >> $GITHUB_OUTPUT
           "
 
       # --- Lockdown: ensure only 3 repos are public ---
       - name: Lockdown HF repos
+        id: lockdown
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python cleanup_visibility.py || echo "Lockdown script completed (may have warnings)"
 
       # --- Phase 1: SFT ---
       - name: Generate SFT data
+        id: sft-data
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python generate_sft_data.py
 
       - name: Phase 1 - SFT Training
+        id: sft-training
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python train_sft.py
-        continue-on-error: true
 
       # --- Phase 2: DPO with soft labels ---
       - name: Phase 2 - DPO Training (GDPO-style soft labels)
+        id: dpo-training
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python train_dpo_v6.py
-        continue-on-error: true
 
       # --- Phase 3: GRPO (GPU only) ---
       - name: Phase 3 - GRPO Training (verifiable rewards)
+        id: grpo-training
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python train_grpo.py
-        continue-on-error: true
 
       # --- Post-training: update Space ---
       - name: Update Space
+        id: update-space
         working-directory: kin-gguf
+        continue-on-error: true
         run: |
           python update_space.py || echo "Space update skipped"
 
@@ -88,8 +97,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| SFT (Phase 1) | ${{ job.steps.phase-1--sft-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| DPO (Phase 2) | ${{ job.steps.phase-2--dpo-training-gdpo-style-soft-labels.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GRPO (Phase 3) | ${{ job.steps.phase-3--grpo-training-verifiable-rewards.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Space Update | ${{ job.steps.update-space.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Lockdown | ${{ job.steps.lockdown-hf-repos.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lockdown | ${{ steps.lockdown.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SFT Data Generation | ${{ steps.sft-data.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SFT Training (Phase 1) | ${{ steps.sft-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DPO Training (Phase 2) | ${{ steps.dpo-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GRPO Training (Phase 3) | ${{ steps.grpo-training.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Space Update | ${{ steps.update-space.outcome }} |" >> $GITHUB_STEP_SUMMARY
