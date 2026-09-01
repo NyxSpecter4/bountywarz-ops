@@ -1,0 +1,31 @@
+name: expand-and-eval
+on:
+  pull_request_target:
+    branches: [main]
+jobs:
+  expand-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: contains(github.event.pull_request.head.ref, 'expand')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests huggingface_hub
+      - run: python kin-gguf/expand_training_data.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+  run-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: contains(github.event.pull_request.head.ref, 'eval')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch transformers datasets scikit-learn huggingface_hub
+      - run: python kin-gguf/run_eval.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
