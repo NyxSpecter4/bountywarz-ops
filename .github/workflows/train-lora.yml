@@ -6,42 +6,18 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Apply fixes to train_v5.py
+      - name: Test fix script
         run: |
-          set -x
-          python kin-gguf/fix_v5.py > /tmp/fix_output.txt 2>&1
-          FIX_STATUS=$?
-          cat /tmp/fix_output.txt
-          python -m py_compile kin-gguf/train_v5.py > /tmp/compile_output.txt 2>&1
-          COMPILE_STATUS=$?
-          cat /tmp/compile_output.txt
-          if [ $FIX_STATUS -ne 0 ] || [ $COMPILE_STATUS -ne 0 ]; then
-            BODY=$(printf "Fix exit: %s\nCompile exit: %s\n---Fix output---\n%s\n---Compile output---\n%s" "$FIX_STATUS" "$COMPILE_STATUS" "$(cat /tmp/fix_output.txt)" "$(cat /tmp/compile_output.txt)")
-            curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/NyxSpecter4/bountywarz-ops/issues/36/comments -d "$(printf '{"body":"%s"}' "$(echo "$BODY" | sed 's/"/\\\"/g' | tr '\n' ' ' | head -c 4000)")"
-            exit 1
-          fi
-          echo "Fix and compile OK"
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
-      - name: Run v5 training
-        run: |
-          set -x
-          python kin-gguf/train_v5.py > /tmp/train_output.txt 2>&1
-          TRAIN_STATUS=$?
-          cat /tmp/train_output.txt
-          if [ $TRAIN_STATUS -ne 0 ]; then
-            BODY=$(tail -50 /tmp/train_output.txt | sed 's/"/\\\"/g' | tr '\n' ' ' | head -c 4000)
-            curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/NyxSpecter4/bountywarz-ops/issues/36/comments -d "$(printf '{"body":"TRAINING FAILED: %s"}' "$BODY")"
-            exit 1
-          fi
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
-          GH_TOKEN: ${{ github.token }}
+          echo "=== Running fix_v5.py ==="
+          python kin-gguf/fix_v5.py
+          echo "=== Fix exit: $? ==="
+          echo "=== Running py_compile ==="
+          python -m py_compile kin-gguf/train_v5.py
+          echo "=== Compile exit: $? ==="
+          echo "=== SUCCESS: fix and compile passed ==="
