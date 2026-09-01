@@ -1,60 +1,60 @@
-import os, sys, requests
-from huggingface_hub import HfApi
+import requests, json, os
 
 _t1 = "hf_KwQovQ"
 _t2 = "SnjHchFY"
 _t3 = "cfeZLzGuVWSuMSEhHjku"
 TOKEN = _t1 + _t2 + _t3
+HEADERS = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
 
-api = HfApi(token=TOKEN)
-HEADERS = {"Authorization": f"Bearer {TOKEN}"}
-
-print("=== KIN Repo Visibility Sweep v2 ===")
-
-PRIVATE_MODELS = ["nyxspecter4/kin-sft-lora", "nyxspecter4/kin-cyber-dpo-v2-lora"]
-PRIVATE_DATASETS = ["nyxspecter4/monk-bounty-examples", "nyxspecter4/kin-v2-data", "nyxspecter4/monk-bounty-dedup-corpus"]
-PRIVATE_SPACES = ["nyxspecter4/kin-v2-cybersecurity", "nyxspecter4/kin-cyber-trainer", "nyxspecter4/monk-finding-grade-arena", "nyxspecter4/monk-finding-loop", "nyxspecter4/nemeton-war-room", "nyxspecter4/monk-ctf-arena", "nyxspecter4/makothoth-flywheel"]
-
-PUBLIC_MODEL = "nyxspecter4/kin-sft-lora-gguf"
-PUBLIC_DATASET = "nyxspecter4/kin-cyber-dpo-v2"
-PUBLIC_SPACE = "nyxspecter4/kin-cybersec"
+print("=== KIN Repo Visibility Sweep v3 (raw API) ===")
 
 def set_visibility(repo_id, repo_type, private):
-    try:
-        api.update_repo_settings(repo_id=repo_id, repo_type=repo_type, private=private)
-        return True, "update_repo_settings"
-    except Exception as e1:
-        pass
-    try:
-        url = f"https://huggingface.co/api/{repo_type}s/{repo_id}/settings"
-        resp = requests.put(url, headers=HEADERS, json={"private": private})
-        if resp.status_code in (200, 201, 204):
-            return True, "raw_api"
-        return False, f"raw_api_{resp.status_code}: {resp.text[:200]}"
-    except Exception as e2:
-        return False, f"both_failed: {e1} | {e2}"
+    url = f"https://huggingface.co/api/{repo_type}s/{repo_id}/settings"
+    resp = requests.put(url, headers=HEADERS, json={"private": private})
+    return resp.status_code, resp.text[:300]
 
 ok = 0
 fail = 0
 
-for repo_id in PRIVATE_MODELS:
-    success, method = set_visibility(repo_id, "model", True)
-    print(f"  [{'OK' if success else 'FAIL'}] model {repo_id} -> private ({method})")
-    ok += success; fail += (not success)
+private_repos = [
+    ("nyxspecter4/kin-sft-lora", "model"),
+    ("nyxspecter4/kin-cyber-dpo-v2-lora", "model"),
+    ("nyxspecter4/monk-bounty-examples", "dataset"),
+    ("nyxspecter4/kin-v2-data", "dataset"),
+    ("nyxspecter4/monk-bounty-dedup-corpus", "dataset"),
+    ("nyxspecter4/kin-v2-cybersecurity", "space"),
+    ("nyxspecter4/kin-cyber-trainer", "space"),
+    ("nyxspecter4/monk-finding-grade-arena", "space"),
+    ("nyxspecter4/monk-finding-loop", "space"),
+    ("nyxspecter4/nemeton-war-room", "space"),
+    ("nyxspecter4/monk-ctf-arena", "space"),
+    ("nyxspecter4/makothoth-flywheel", "space"),
+]
 
-for repo_id in PRIVATE_DATASETS:
-    success, method = set_visibility(repo_id, "dataset", True)
-    print(f"  [{'OK' if success else 'FAIL'}] dataset {repo_id} -> private ({method})")
-    ok += success; fail += (not success)
+public_repos = [
+    ("nyxspecter4/kin-sft-lora-gguf", "model"),
+    ("nyxspecter4/kin-cyber-dpo-v2", "dataset"),
+    ("nyxspecter4/kin-cybersec", "space"),
+]
 
-for repo_id in PRIVATE_SPACES:
-    success, method = set_visibility(repo_id, "space", True)
-    print(f"  [{'OK' if success else 'FAIL'}] space {repo_id} -> private ({method})")
-    ok += success; fail += (not success)
+for repo_id, rtype in private_repos:
+    code, body = set_visibility(repo_id, rtype, True)
+    status = "OK" if code in (200, 201, 204) else "FAIL"
+    print(f"  [{status}] {rtype} {repo_id} -> private (HTTP {code})")
+    if code in (200, 201, 204):
+        ok += 1
+    else:
+        fail += 1
+        print(f"    Error: {body}")
 
-for repo_id, rtype in [(PUBLIC_MODEL, "model"), (PUBLIC_DATASET, "dataset"), (PUBLIC_SPACE, "space")]:
-    success, method = set_visibility(repo_id, rtype, False)
-    print(f"  [OK] {rtype} {repo_id} -> public ({method})")
-    ok += success
+for repo_id, rtype in public_repos:
+    code, body = set_visibility(repo_id, rtype, False)
+    status = "OK" if code in (200, 201, 204) else "FAIL"
+    print(f"  [{status}] {rtype} {repo_id} -> public (HTTP {code})")
+    if code in (200, 201, 204):
+        ok += 1
+    else:
+        fail += 1
+        print(f"    Error: {body}")
 
 print(f"\n=== Done: {ok} ok, {fail} failed ===")
