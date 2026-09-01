@@ -113,28 +113,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BODY="## Training Pipeline Diagnostics (Run ${{ github.run_id }})"
-          BODY="$BODY"
-\n'"GPU: ${{ steps.gpu.outputs.has_gpu }}"
+          echo "## Training Pipeline Diagnostics (Run ${{ github.run_id }})" > /tmp/pr_body.md
+          echo "GPU: ${{ steps.gpu.outputs.has_gpu }}" >> /tmp/pr_body.md
           for f in sft_error.txt dpo_error.txt grpo_error.txt; do
             if [ -f "kin-gguf/$f" ]; then
-              BODY="$BODY"
-\n\n'"### $f"
-\n'"\`\`\`"
-\n'"$(cat kin-gguf/$f)"
-\n'"\`\`\`"
+              echo "" >> /tmp/pr_body.md
+              echo "### $f" >> /tmp/pr_body.md
+              echo '```' >> /tmp/pr_body.md
+              cat "kin-gguf/$f" >> /tmp/pr_body.md
+              echo '```' >> /tmp/pr_body.md
             fi
           done
           if [ ! -f "kin-gguf/sft_error.txt" ]; then
-            BODY="$BODY"
-\n\n'"### SFT: No error file (succeeded or not reached)"
+            echo "" >> /tmp/pr_body.md
+            echo "### SFT: No error file (succeeded or not reached)" >> /tmp/pr_body.md
           fi
           if [ ! -f "kin-gguf/dpo_error.txt" ]; then
-            BODY="$BODY"
-\n\n'"### DPO: No error file (succeeded or not reached)"
+            echo "" >> /tmp/pr_body.md
+            echo "### DPO: No error file (succeeded or not reached)" >> /tmp/pr_body.md
           fi
           if [ ! -f "kin-gguf/grpo_error.txt" ]; then
-            BODY="$BODY"
-\n\n'"### GRPO: No error file (succeeded or not reached)"
+            echo "" >> /tmp/pr_body.md
+            echo "### GRPO: No error file (succeeded or not reached)" >> /tmp/pr_body.md
           fi
-          gh pr comment 36 --body "$BODY" || echo "Could not post PR comment"
+          gh pr comment 36 --body-file /tmp/pr_body.md || echo "Could not post PR comment"
