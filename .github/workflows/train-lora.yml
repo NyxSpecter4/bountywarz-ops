@@ -6,18 +6,32 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Test fix script
+      - name: Apply fixes to train_v5.py
+        run: python kin-gguf/fix_v5.py
+      - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install --no-cache-dir transformers peft trl datasets huggingface_hub accelerate
+      - name: Run v5 training
         run: |
-          echo "=== Running fix_v5.py ==="
-          python kin-gguf/fix_v5.py
-          echo "=== Fix exit: $? ==="
-          echo "=== Running py_compile ==="
-          python -m py_compile kin-gguf/train_v5.py
-          echo "=== Compile exit: $? ==="
-          echo "=== SUCCESS: fix and compile passed ==="
+          python kin-gguf/train_v5.py > /tmp/train_output.txt 2>&1
+          TRAIN_STATUS=$?
+          cat /tmp/train_output.txt
+          if [ $TRAIN_STATUS -ne 0 ]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git stash || true
+            git checkout -b error-log
+            cp /tmp/train_output.txt error.txt
+            git add error.txt
+            git commit -m "Training error output"
+            git push origin error-log --force || true
+            exit 1
+          fi
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
+          GH_TOKEN: ${{ github.token }}

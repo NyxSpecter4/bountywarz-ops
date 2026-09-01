@@ -9,10 +9,8 @@ with open(path, 'r') as f:
 original_len = len(c)
 
 # Fix 1: Escape unescaped quotes in NoSQL injection pair (syntax error)
-# The unescaped pattern: {"user_id":123,"email":"admin@target.com","role":"user"}
-# Needs to become:      {\"user_id\":123,\"email\":\"admin@target.com\",\"role\":\"user\"}
 old1 = '{"user_id":123,"email":"admin@target.com","role":"user"}'
-new1 = '{\\"user_id\\":123,\\"email\\":\\"admin@target.com\\",\\"role\\":\\"user\\"}'
+new1 = '{\"user_id\":123,\"email\":\"admin@target.com\",\"role\":\"user\"}'
 c = c.replace(old1, new1)
 
 # Fix 2: Remove max_prompt_length (unsupported in installed TRL version)
@@ -50,6 +48,12 @@ c = c.replace(
 c = c.replace(
     '        max_length=1024,',
     '        max_length=1024 if torch.cuda.is_available() else 512,'
+)
+
+# Fix 5: fp16=True on CPU causes errors — set fp16=False (match train_lora.py)
+c = c.replace(
+    '        fp16=not (torch.cuda.is_available() and torch.cuda.is_bf16_supported()),',
+    '        fp16=False,'
 )
 
 # Fix 4d: Update model card to show actual base model used
