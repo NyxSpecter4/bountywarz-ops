@@ -13,31 +13,33 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install --no-cache-dir huggingface_hub
-      - name: Check if adapter already exists
+      - name: Check if v5 adapter already exists
         id: check
         run: |
-          python -c "
+          cat > /tmp/check.py << 'PYEOF'
           import os
           from huggingface_hub import HfApi
-          T = os.environ.get('HF_TOKEN', '')
-          api = HfApi(token=T) if T else HfApi()
+          T = os.environ.get("HF_TOKEN", "")
           try:
-              info = api.repo_info('nyxspecter4/kin-cyber-dpo-v2-lora', files_metadata=True)
+              api = HfApi(token=T) if T else HfApi()
+              info = api.repo_info("nyxspecter4/kin-cyber-dpo-v2-lora", files_metadata=True)
               files = [s.rfilename for s in info.siblings]
-              has_adapter = 'adapter_model.safetensors' in files and 'README.md' in files
-              r = api.hf_hub_download(repo_id='nyxspecter4/kin-cyber-dpo-v2-lora', filename='README.md', token=T) if T else None
-              if r:
-                  with open(r) as f: c = f.read()
-                  has_adapter = has_adapter and 'v5 New Categories' in c
-              print(f'skip={"true" if has_adapter else "false"}')
+              has = "adapter_model.safetensors" in files
+              if has:
+                  r = api.hf_hub_download(repo_id="nyxspecter4/kin-cyber-dpo-v2-lora", filename="README.md", token=T) if T else None
+                  if r:
+                      with open(r) as f: c = f.read()
+                      has = "v5 New Categories" in c
+              print("skip=true" if has else "skip=false")
           except Exception as e:
-              print('skip=false')
-          " >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
+              print("skip=false")
+          PYEOF
+          python /tmp/check.py >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
       - name: Skip training (adapter already exists)
         if: steps.check.outputs.skip == 'true'
-        run: echo "Adapter already trained, skipping training"
+        run: echo "v5 adapter already trained, skipping"
       - name: Train (adapter not yet uploaded)
         if: steps.check.outputs.skip != 'true'
         run: |
