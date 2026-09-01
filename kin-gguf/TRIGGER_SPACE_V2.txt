@@ -1,0 +1,1 @@
+Trigger: Space switch to transformers (Inference API does not support GGUF models on serverless tier)
