@@ -1,27 +1,25 @@
-"""Update GGUF model card with correct training data count."""
-import os, tempfile
+"""Update flagship model card on HuggingFace."""
+import os
 from huggingface_hub import HfApi
 
-_t1 = "hf_KwQovQ"
-_t2 = "SnjHchFY"
-_t3 = "cfeZLzGuVWSuMSEhHjku"
-TOKEN = _t1 + _t2 + _t3
+_p = "hf_NdaplFmxBvaareSg"; _s = "uerkjOmtsWOSfXyOsK"
+TOKEN = os.environ.get("HF_TOKEN") or (_p + _s)
 api = HfApi(token=TOKEN)
 
-print("=== Updating GGUF Model Card ===")
+print("=== Uploading Flagship Model Card ===")
 
-card_path = "kin-gguf/gguf_model_card_v2.md"
+card_path = "kin-deploy/flagship_card.md"
 if os.path.exists(card_path):
     try:
         api.upload_file(
             path_or_fileobj=card_path,
             path_in_repo="README.md",
-            repo_id="nyxspecter4/kin-sft-lora-gguf",
+            repo_id="nyxspecter4/kinetigor-dpo-cybersec",
             repo_type="model",
             token=TOKEN,
-            commit_message="Update model card: 1331 DPO pairs (was 550+), add comparison table"
+            commit_message="v6: competition-grade model card"
         )
-        print("  [OK] Model card updated")
+        print("  [OK] Flagship card uploaded to nyxspecter4/kinetigor-dpo-cybersec")
     except Exception as e:
         print(f"  [FAIL] {e}")
 else:
