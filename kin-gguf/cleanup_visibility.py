@@ -12,15 +12,23 @@ api = HfApi(token=T)
 
 # Models that should be PRIVATE (old, bad quality, not ready)
 MAKE_PRIVATE = [
-    "nyxspecter4/kin-sft-lora",           # Old SFT model, 3B, not good quality
-    "nyxspecter4/kin-v2-cybersecurity-7b-lora",  # v2, only 2 downloads, not DPO
+    "nyxspecter4/kin-sft-lora",
+    "nyxspecter4/kin-v2-cybersecurity-7b-lora",
 ]
 
 for repo_id in MAKE_PRIVATE:
     try:
+        # Try update_repo_visibility first
         api.update_repo_visibility(repo_id=repo_id, repo_type="model", private=True)
-        print(f"[OK] Made {repo_id} PRIVATE")
+        print(f"[OK] Made {repo_id} PRIVATE via update_repo_visibility")
     except Exception as e:
-        print(f"[FAIL] {repo_id}: {e}")
+        print(f"[FAIL update_repo_visibility] {repo_id}: {e}")
+        try:
+            # Fallback: use the raw HTTP API
+            from huggingface_hub import HfApi as _HfApi
+            api._hf_api_set_repo_visibility(repo_id=repo_id, repo_type="model", private=True)
+            print(f"[OK] Made {repo_id} PRIVATE via _hf_api_set_repo_visibility")
+        except Exception as e2:
+            print(f"[FAIL fallback] {repo_id}: {e2}")
 
 print("Cleanup complete.")
