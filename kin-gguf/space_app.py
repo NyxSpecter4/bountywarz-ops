@@ -1,16 +1,23 @@
 import gradio as gr
 import os
-from huggingface_hub import InferenceClient
+import torch
+from threading import Thread
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
-MODEL_ID = "nyxspecter4/kin-sft-lora-gguf"
+MODEL_ID = "nyxspecter4/kin-sft-lora"
 
-try:
-    client = InferenceClient(MODEL_ID, token=HF_TOKEN)
-    print(f"InferenceClient initialized for {MODEL_ID}", flush=True)
-except Exception as e:
-    print(f"Warning: InferenceClient init: {e}", flush=True)
-    client = None
+print("Loading KIN model (this takes ~30s on first request)...", flush=True)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=HF_TOKEN)
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_ID,
+    token=HF_TOKEN,
+    torch_dtype=torch.bfloat16,
+    device_map="cpu",
+    low_cpu_mem_usage=True,
+)
+model.eval()
+print("KIN model loaded successfully!", flush=True)
 
 SYSTEM_PROMPT = (
     "You are KIN -- a sharp cybersecurity AI partner. Direct, opinionated, specific. "
@@ -23,9 +30,7 @@ SYSTEM_PROMPT = (
 
 def chat_response(message, history):
     if not message.strip():
-        return ""
-    if client is None:
-        yield "KIN model is initializing. Please try again in a moment."
+        yield ""
         return
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -34,27 +39,38 @@ def chat_response(message, history):
         messages.append({"role": "assistant", "content": bot_msg})
     messages.append({"role": "user", "content": message})
 
-    try:
-        response = ""
-        for chunk in client.chat_completion(
-            messages=messages,
-            max_tokens=600,
-            temperature=0.6,
-            stream=True,
-        ):
-            delta = chunk.choices[0].delta.content or ""
-            response += delta
-            yield response
-    except Exception as e:
-        yield f"KIN encountered an error. Please try again. (Debug: {str(e)[:200]})"
+    text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    inputs = tokenizer(text, return_tensors="pt").to(model.device)
+
+    streamer = TextIteratorStreamer(
+        tokenizer, skip_prompt=True, skip_special_tokens=True
+    )
+    generation_kwargs = dict(
+        **inputs,
+        max_new_tokens=600,
+        temperature=0.6,
+        do_sample=True,
+        top_p=0.9,
+        pad_token_id=tokenizer.eos_token_id,
+        streamer=streamer,
+    )
+
+    thread = Thread(target=model.generate, kwargs=generation_kwargs)
+    thread.start()
+
+    response = ""
+    for chunk in streamer:
+        response += chunk
+        yield response
+
+    thread.join()
 
 
 def audit_code(code_input):
     if not code_input.strip():
         yield "Please provide a code snippet, configuration, or error trace to audit."
-        return
-    if client is None:
-        yield "KIN model is initializing. Please try again in a moment."
         return
 
     audit_prompt = (
@@ -73,19 +89,33 @@ def audit_code(code_input):
         {"role": "user", "content": audit_prompt},
     ]
 
-    try:
-        response = ""
-        for chunk in client.chat_completion(
-            messages=messages,
-            max_tokens=800,
-            temperature=0.3,
-            stream=True,
-        ):
-            delta = chunk.choices[0].delta.content or ""
-            response += delta
-            yield response
-    except Exception as e:
-        yield f"Audit error. Please try again. (Debug: {str(e)[:200]})"
+    text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    inputs = tokenizer(text, return_tensors="pt").to(model.device)
+
+    streamer = TextIteratorStreamer(
+        tokenizer, skip_prompt=True, skip_special_tokens=True
+    )
+    generation_kwargs = dict(
+        **inputs,
+        max_new_tokens=800,
+        temperature=0.3,
+        do_sample=True,
+        top_p=0.95,
+        pad_token_id=tokenizer.eos_token_id,
+        streamer=streamer,
+    )
+
+    thread = Thread(target=model.generate, kwargs=generation_kwargs)
+    thread.start()
+
+    response = ""
+    for chunk in streamer:
+        response += chunk
+        yield response
+
+    thread.join()
 
 
 custom_css = (
@@ -148,4 +178,4 @@ with gr.Blocks(
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.queue().launch()
