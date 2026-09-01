@@ -8,21 +8,25 @@ on:
 jobs:
   hunt:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install --no-cache-dir tinker transformers
-      - run: python kin-inkling/failure_hunter.py
+      - name: Install dependencies
+        run: |
+          pip install --no-cache-dir tinker transformers
+          pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu || echo "torch CPU install skipped"
+      - name: Run failure hunter
+        run: python kin-inkling/failure_hunter.py
         env:
           TINKER_API_KEY: tml-JyTGXaKG7cCYkXS4EuUZZzeM36a46pZGrfSWoj3ENJYeZAoPFmMo5CsaOUvKwuXxDAAAA
       - name: Commit results
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add inkling_results/
-          git commit -m "inkling failure hunt results" || echo "no changes to commit"
-          git push
+          git add inkling_results/ || true
+          git commit -m "inkling failure hunt results [skip ci]" || echo "no changes to commit"
+          git push || echo "push failed or nothing to push"
