@@ -1,0 +1,2 @@
+GGUF retrigger 2026-09-02T01:52:13.995Z
+Full conversion script now on main (commit 8454e63).
