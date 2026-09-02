@@ -1,2 +1,2 @@
-GGUF retrigger 2026-09-02T01:52:13.995Z
-Full conversion script now on main (commit 8454e63).
+GGUF retrigger (tokenizer patch) 2026-09-02T02:01:24.106Z
+convert_gguf.py now patches extra_special_tokens (643d63f).
