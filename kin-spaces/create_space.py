@@ -4,7 +4,6 @@ print("=== CREATE SPACE START ===", flush=True)
 import sys, os, time, tempfile, traceback, datetime
 print("Python:", sys.version, flush=True)
 
-# Token (split to avoid secret scanning)
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
 _c = "eSguerkj"
@@ -26,7 +25,6 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-# Validate token
 print("Validating token...", flush=True)
 try:
     info = api.whoami()
@@ -36,7 +34,6 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-# Make the model PUBLIC so the Space can load it without a secret
 print("Setting model to public...", flush=True)
 try:
     api.update_repo_visibility(repo_id=MODEL_ID, repo_type="model", private=False, token=HF_TOKEN)
@@ -44,7 +41,6 @@ try:
 except Exception as e:
     print(f"WARN: could not set model public: {e}", flush=True)
 
-# Create / ensure Space
 print("Creating Space...", flush=True)
 for attempt in range(1, 4):
     try:
@@ -57,8 +53,12 @@ for attempt in range(1, 4):
         if attempt < 3:
             time.sleep(5)
 
-# requirements.txt — gradio 4.44 + audioop-lts (fixes py3.13 audioop) + transformers/torch for in-Space inference
-REQS = "gradio==4.44.0\nhuggingface_hub>=0.26.0\naudioop-lts\ntransformers\ntorch\n"
+REQS = """gradio==4.44.0
+huggingface_hub>=0.26.0
+audioop-lts
+transformers
+torch
+"""
 print("Uploading requirements.txt...", flush=True)
 with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
     f.write(REQS)
@@ -68,30 +68,31 @@ api.upload_file(path_or_fileobj=p, path_in_repo="requirements.txt",
 os.unlink(p)
 print("requirements.txt uploaded", flush=True)
 
-# README with DYNAMIC build timestamp (forces a new commit -> rebuild each run)
 build_ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-README = (
-    "---\n"
-    "title: KIN Cybersecurity AI\n"
-    "emoji: \U0001f6e1\n"
-    "colorFrom: gray\n"
-    "colorTo: blue\n"
-    "sdk: gradio\n"
-    "sdk_version: 4.44.0\n"
-    "app_file: app.py\n"
-    "pinned: true\n"
-    "tags:\n"
-    "  - cybersecurity\n"
-    "  - security\n"
-    "  - threat-intelligence\n"
-    "  - penetration-testing\n"
-    "models:\n"
-    "  - " + MODEL_ID + "\n"
-    "---\n\n"
-    "# KIN - Cybersecurity AI (v6 DPO)\n\n"
-    "Chat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.\n\n"
-    "Build: " + build_ts + "\n"
-)
+README = f"""---
+title: KIN Cybersecurity AI
+emoji: \U0001f6e1
+colorFrom: gray
+colorTo: blue
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: true
+tags:
+  - cybersecurity
+  - security
+  - threat-intelligence
+  - penetration-testing
+models:
+  - {MODEL_ID}
+---
+
+# KIN - Cybersecurity AI (v6 DPO)
+
+Chat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.
+
+Build: {build_ts}
+"""
 print("Uploading README...", flush=True)
 with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
     f.write(README)
@@ -101,7 +102,6 @@ api.upload_file(path_or_fileobj=p, path_in_repo="README.md",
 os.unlink(p)
 print("README uploaded", flush=True)
 
-# Upload app.py (in-Space transformers inference)
 print("Uploading app.py...", flush=True)
 api.upload_file(path_or_fileobj="kin-spaces/app.py", path_in_repo="app.py",
     repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)

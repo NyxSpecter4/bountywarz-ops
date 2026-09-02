@@ -21,6 +21,8 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install deps
-        run: pip install huggingface_hub
+        run: pip install "huggingface_hub>=0.26,<0.30"
+      - name: Syntax check
+        run: python -m py_compile kin-spaces/create_space.py
       - name: Create Space
         run: python kin-spaces/create_space.py
