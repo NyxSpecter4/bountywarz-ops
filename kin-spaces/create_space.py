@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Create KIN Space with new name (old name may be tombstoned)."""
+"""Create KIN Space and report errors clearly."""
 import sys, os, time, traceback, json, urllib.request
-print("=== CREATE SPACE V2 ===", flush=True)
+print("=== CREATE SPACE ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -10,13 +10,17 @@ _d = "OmtsWOSf"
 _e = "XyOsK"
 HF_TOKEN = _a + _b + _c + _d + _e
 
-# Try both names
-SPACE_IDS = ["nyxspecter4/kin-inference", "nyxspecter4/kin-inference-v2"]
-
 from huggingface_hub import HfApi
 import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
+
+# Verify token works
+try:
+    who = api.whoami()
+    print(f"Token valid, user: {who.get('name', 'unknown')}", flush=True)
+except Exception as e:
+    print(f"Token check FAILED: {e}", flush=True)
 
 # Download app.py from GitHub
 print("Downloading app.py...", flush=True)
@@ -24,15 +28,13 @@ urllib.request.urlretrieve(
     "https://raw.githubusercontent.com/NyxSpecter4/bountywarz-ops/main/kin-spaces/app.py",
     "/tmp/app.py"
 )
-print("  OK", flush=True)
 
-# Write requirements.txt
+# Write files
 with open("/tmp/requirements.txt", "w") as f:
     f.write("gradio>=5.0,<6.0\n")
     f.write("huggingface_hub>=0.26,<0.30\n")
     f.write("audioop-lts;python_version>='3.13'\n")
 
-# Write README.md
 with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("title: Kin Inference\n")
@@ -47,24 +49,32 @@ with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("KIN Cybersecurity AI inference demo.\n")
 
-# Try creating each Space
-created_id = None
-for sid in SPACE_IDS:
-    print(f"Trying to create {sid}...", flush=True)
+# Try creating Space
+SPACE_ID = "nyxspecter4/kin-inference"
+print(f"Creating {SPACE_ID}...", flush=True)
+try:
+    result = api.create_space(repo_id=SPACE_ID, space_sdk="gradio", token=HF_TOKEN, private=False)
+    print(f"CREATED OK! Result: {result}", flush=True)
+except Exception as e:
+    print(f"CREATE FAILED: {type(e).__name__}", flush=True)
+    print(f"Error message: {e}", flush=True)
+    print(f"Error repr: {repr(e)}", flush=True)
+    traceback.print_exc()
+    # Try v2
+    SPACE_ID2 = "nyxspecter4/kin-inference-v2"
+    print(f"Trying {SPACE_ID2}...", flush=True)
     try:
-        api.create_space(repo_id=sid, space_sdk="gradio", token=HF_TOKEN, private=False)
-        print(f"  Created {sid} OK!", flush=True)
-        created_id = sid
-        break
-    except Exception as e:
-        print(f"  Failed: {type(e).__name__}: {e}", flush=True)
+        result = api.create_space(repo_id=SPACE_ID2, space_sdk="gradio", token=HF_TOKEN, private=False)
+        print(f"CREATED v2 OK! Result: {result}", flush=True)
+        SPACE_ID = SPACE_ID2
+    except Exception as e2:
+        print(f"CREATE v2 FAILED: {type(e2).__name__}", flush=True)
+        print(f"Error: {e2}", flush=True)
+        traceback.print_exc()
+        print("ALL CREATION ATTEMPTS FAILED", flush=True)
+        sys.exit(1)
 
-if not created_id:
-    print("All creation attempts failed!", flush=True)
-    print("=== DONE (FAILED) ===", flush=True)
-    sys.exit(1)
-
-# Upload files to the created Space
+# Upload files
 time.sleep(5)
 for fname in ["app.py", "requirements.txt", "README.md"]:
     print(f"Uploading {fname}...", flush=True)
@@ -72,7 +82,7 @@ for fname in ["app.py", "requirements.txt", "README.md"]:
         api.upload_file(
             path_or_fileobj=f"/tmp/{fname}",
             path_in_repo=fname,
-            repo_id=created_id,
+            repo_id=SPACE_ID,
             repo_type="space",
             token=HF_TOKEN,
         )
@@ -80,15 +90,15 @@ for fname in ["app.py", "requirements.txt", "README.md"]:
     except Exception as e:
         print(f"  {fname} FAILED: {type(e).__name__}: {e}", flush=True)
 
-# Quick status check
+# Status check
 time.sleep(10)
 try:
-    url = f"https://huggingface.co/api/spaces/{created_id}/runtime"
+    url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
     with urllib.request.urlopen(urllib.request.Request(url)) as resp:
         state = json.loads(resp.read())
         print(f"Stage: {state.get('stage')}", flush=True)
 except Exception as e:
-    print(f"Status check: {e}", flush=True)
+    print(f"Status: {e}", flush=True)
 
-print(f"Created Space: {created_id}", flush=True)
+print(f"SPACE_ID: {SPACE_ID}", flush=True)
 print("=== DONE ===", flush=True)
