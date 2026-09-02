@@ -1,12 +1,15 @@
-=== FIX SPACE v3 (gradio 5.44.0 pin) ===
+=== FIX SPACE v4 (update existing, gradio 5.44.0) ===
 huggingface_hub: 0.29.3
 Downloading app.py from GitHub...
   app.py size: 1572 bytes
   requirements.txt written
-  README.md written
-Deleting old Space...
-  Deleted OK
-Creating new Space...
-  Create FAILED: HfHubHTTPError: 409 Client Error: Conflict for url: https://huggingface.co/api/repos/create (Request ID: Root=1-6a984544-2c91058b6c71b67c76ac03c2;bf5fa88b-847c-4c1a-b02d-f8dd02a0e1fa)
-
-You already created this space repo: nyxspecter4/kin-inference
+  README.md written (sdk_version: 5.44.0)
+Ensuring Space exists...
+  Space already exists (OK)
+Uploading app.py + requirements.txt + README.md...
+No files have been modified since last commit. Skipping to prevent empty commit.
+  All files uploaded OK
+Waiting for build (up to 5 min)...
+  Check 1: RUNNING
+  SPACE IS RUNNING!
+=== DONE ===
