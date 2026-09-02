@@ -1,5 +1,6 @@
 === FIX SPACE ===
 huggingface_hub: 0.29.3
+User: nyxspecter4
 Uploading via create_commit...
   create_commit FAILED: ValueError: Invalid metadata in README.md.
 - "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
@@ -17,7 +18,7 @@ Traceback (most recent call last):
     hf_raise_for_status(response)
   File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 464, in hf_raise_for_status
     raise _format(BadRequestError, message, response) from e
-huggingface_hub.errors.BadRequestError: (Request ID: Root=1-6a983c2c-66e59f582a6bf55a71d43e66;961ef6e3-a341-4330-a9ba-03e891cfd792)
+huggingface_hub.errors.BadRequestError: (Request ID: Root=1-6a983d24-3119b81d4d5ee7c651d94231;55777ca0-de78-42d1-890b-6f858b5cfdc6)
 
 Bad request:
 "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
@@ -25,7 +26,7 @@ Bad request:
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/home/runner/work/bountywarz-ops/bountywarz-ops/kin-spaces/create_space.py", line 46, in <module>
+  File "/home/runner/work/bountywarz-ops/bountywarz-ops/kin-spaces/fix_space.py", line 50, in <module>
     commit_info = api.create_commit(
                   ^^^^^^^^^^^^^^^^^^
   File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
@@ -40,17 +41,19 @@ Traceback (most recent call last):
     raise ValueError(f"Invalid metadata in README.md.\n{message}") from e
 ValueError: Invalid metadata in README.md.
 - "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-  Falling back to upload_file...
-  requirements.txt upload OK
-  README.md upload FAILED: ValueError: Invalid metadata in README.md.
+No files have been modified since last commit. Skipping to prevent empty commit.
+  requirements.txt upload_file OK
+  README.md upload_file FAILED: ValueError: Invalid metadata in README.md.
 - "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-Stage: BUILDING
-Restarting Space...
-  Restart OK
+Stage after upload: BUILD_ERROR
+Factory reboot...
+  Reboot OK
   Check 1: BUILDING
   Check 2: BUILDING
   Check 3: BUILDING
   Check 4: BUILDING
-  Check 5: BUILD_ERROR
+  Check 5: BUILDING
   Check 6: BUILD_ERROR
+  Check 7: BUILD_ERROR
+  Check 8: BUILD_ERROR
 === DONE ===
