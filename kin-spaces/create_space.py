@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/update the KIN inference Space, repoint to v6, fix py3.13 audioop."""
+"""Create/update the KIN inference Space — InferenceClient fallback (no torch)."""
 print("=== CREATE SPACE START ===", flush=True)
 import sys, os, time, tempfile, traceback, datetime
 print("Python:", sys.version, flush=True)
@@ -56,8 +56,6 @@ for attempt in range(1, 4):
 REQS = """gradio==4.44.0
 huggingface_hub>=0.26.0
 audioop-lts
-transformers
-torch
 """
 print("Uploading requirements.txt...", flush=True)
 with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
