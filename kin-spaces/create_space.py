@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Create KIN Space from scratch (old one was deleted)."""
+"""Create KIN Space with new name (old name may be tombstoned)."""
 import sys, os, time, traceback, json, urllib.request
-print("=== CREATE SPACE ===", flush=True)
+print("=== CREATE SPACE V2 ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -9,7 +9,9 @@ _c = "eSguerkj"
 _d = "OmtsWOSf"
 _e = "XyOsK"
 HF_TOKEN = _a + _b + _c + _d + _e
-SPACE_ID = "nyxspecter4/kin-inference"
+
+# Try both names
+SPACE_IDS = ["nyxspecter4/kin-inference", "nyxspecter4/kin-inference-v2"]
 
 from huggingface_hub import HfApi
 import huggingface_hub
@@ -45,23 +47,32 @@ with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("KIN Cybersecurity AI inference demo.\n")
 
-# Create Space (it was deleted already)
-print("Creating Space...", flush=True)
-try:
-    api.create_space(repo_id=SPACE_ID, space_sdk="gradio", token=HF_TOKEN, private=False)
-    print("  Created OK", flush=True)
-    time.sleep(5)
-except Exception as e:
-    print(f"  Create failed: {type(e).__name__}: {e}", flush=True)
+# Try creating each Space
+created_id = None
+for sid in SPACE_IDS:
+    print(f"Trying to create {sid}...", flush=True)
+    try:
+        api.create_space(repo_id=sid, space_sdk="gradio", token=HF_TOKEN, private=False)
+        print(f"  Created {sid} OK!", flush=True)
+        created_id = sid
+        break
+    except Exception as e:
+        print(f"  Failed: {type(e).__name__}: {e}", flush=True)
 
-# Upload files one by one
+if not created_id:
+    print("All creation attempts failed!", flush=True)
+    print("=== DONE (FAILED) ===", flush=True)
+    sys.exit(1)
+
+# Upload files to the created Space
+time.sleep(5)
 for fname in ["app.py", "requirements.txt", "README.md"]:
     print(f"Uploading {fname}...", flush=True)
     try:
         api.upload_file(
             path_or_fileobj=f"/tmp/{fname}",
             path_in_repo=fname,
-            repo_id=SPACE_ID,
+            repo_id=created_id,
             repo_type="space",
             token=HF_TOKEN,
         )
@@ -72,11 +83,12 @@ for fname in ["app.py", "requirements.txt", "README.md"]:
 # Quick status check
 time.sleep(10)
 try:
-    url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
+    url = f"https://huggingface.co/api/spaces/{created_id}/runtime"
     with urllib.request.urlopen(urllib.request.Request(url)) as resp:
         state = json.loads(resp.read())
         print(f"Stage: {state.get('stage')}", flush=True)
 except Exception as e:
-    print(f"Status check failed: {e}", flush=True)
+    print(f"Status check: {e}", flush=True)
 
+print(f"Created Space: {created_id}", flush=True)
 print("=== DONE ===", flush=True)
