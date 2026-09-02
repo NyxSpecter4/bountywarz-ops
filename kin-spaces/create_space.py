@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/update the KIN inference Space — InferenceClient fallback (no torch)."""
+"""Create/update the KIN inference Space — InferenceClient + gradio 5 (no torch)."""
 print("=== CREATE SPACE START ===", flush=True)
 import sys, os, time, tempfile, traceback, datetime
 print("Python:", sys.version, flush=True)
@@ -53,8 +53,8 @@ for attempt in range(1, 4):
         if attempt < 3:
             time.sleep(5)
 
-REQS = """gradio==4.44.0
-huggingface_hub>=0.26,<1.0
+REQS = """gradio>=5.0,<6.0
+huggingface_hub>=0.26
 audioop-lts
 """
 print("Uploading requirements.txt...", flush=True)
@@ -73,7 +73,7 @@ emoji: \U0001f6e1
 colorFrom: gray
 colorTo: blue
 sdk: gradio
-sdk_version: 4.44.0
+sdk_version: 5.0.0
 app_file: app.py
 pinned: true
 tags:
@@ -111,11 +111,5 @@ try:
     print("Space restarted", flush=True)
 except Exception as e:
     print(f"WARN: could not restart space: {e}", flush=True)
-    # Try factory reboot as fallback
-    try:
-        api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
-        print("Space factory rebooted", flush=True)
-    except Exception as e2:
-        print(f"WARN: could not factory reboot: {e2}", flush=True)
 
 print("=== SPACE UPDATE COMPLETE ===", flush=True)
