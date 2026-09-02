@@ -1,10 +1,7 @@
-=== FIX SPACE V3 ===
-huggingface_hub: 0.29.3
-Uploading via create_commit...
-  create_commit OK: https://huggingface.co/spaces/nyxspecter4/kin-inference/commit/7ff41d69a39a83c057efdf2f4cf2178d7fd00e42
-Stage after upload: BUILDING
-Factory reboot...
-  Reboot OK
+=== FACTORY REBOOT ===
+Before reboot: RUNTIME_ERROR
+Calling factory_reboot...
+  Reboot called OK
   Check 1: BUILDING
   Check 2: BUILDING
   Check 3: BUILDING
@@ -12,13 +9,12 @@ Factory reboot...
   Check 5: BUILDING
   Check 6: BUILDING
   Check 7: APP_STARTING
-  Check 8: RUNTIME_ERROR
+  Check 8: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
+  File "/app/app.py", line 1, in <module>
+    import gradio as gr
+  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, 
   RUNTIME_ERROR: Exit code: 1. Reason: Traceback (most recent call last):
   File "/app/app.py", line 1, in <module>
     import gradio as gr
-  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, in <module>
-    import gradio._simple_templates
-  File "/usr/local/lib/python3.13/site-packages/gradio/_simple_templates/__init__.py", line 1, in <module>
-    from .simpledropdown import SimpleDropdown
-  File "/usr/local/lib/python3.13/site-packages/gradio/_simple_templates/simpledropdown.py", line 
+  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, 
 === DONE ===
