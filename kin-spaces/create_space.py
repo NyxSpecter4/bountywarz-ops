@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Recreate KIN Space: download app.py from GitHub, upload all files."""
+"""Create KIN Space from scratch (old one was deleted)."""
 import sys, os, time, traceback, json, urllib.request
-print("=== RECREATE SPACE ===", flush=True)
+print("=== CREATE SPACE ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -16,22 +16,21 @@ import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
 
-# Download app.py from GitHub repo
-print("Downloading app.py from GitHub...", flush=True)
-app_url = "https://raw.githubusercontent.com/NyxSpecter4/bountywarz-ops/main/kin-spaces/app.py"
-urllib.request.urlretrieve(app_url, "/tmp/app.py")
-print("  Downloaded", flush=True)
+# Download app.py from GitHub
+print("Downloading app.py...", flush=True)
+urllib.request.urlretrieve(
+    "https://raw.githubusercontent.com/NyxSpecter4/bountywarz-ops/main/kin-spaces/app.py",
+    "/tmp/app.py"
+)
+print("  OK", flush=True)
 
 # Write requirements.txt
-print("Writing requirements.txt...", flush=True)
 with open("/tmp/requirements.txt", "w") as f:
     f.write("gradio>=5.0,<6.0\n")
     f.write("huggingface_hub>=0.26,<0.30\n")
     f.write("audioop-lts;python_version>='3.13'\n")
-print("  Written", flush=True)
 
 # Write README.md
-print("Writing README.md...", flush=True)
 with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("title: Kin Inference\n")
@@ -44,30 +43,18 @@ with open("/tmp/README.md", "w") as f:
     f.write("app_file: app.py\n")
     f.write("pinned: false\n")
     f.write("---\n")
-    f.write("\n")
     f.write("KIN Cybersecurity AI inference demo.\n")
-print("  Written", flush=True)
 
-# Delete old Space
-print("Deleting old Space...", flush=True)
-try:
-    api.delete_repo(repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
-    print("  Deleted OK", flush=True)
-    time.sleep(5)
-except Exception as e:
-    print(f"  Delete failed (may not exist): {e}", flush=True)
-
-# Create new Space
-print("Creating new Space...", flush=True)
+# Create Space (it was deleted already)
+print("Creating Space...", flush=True)
 try:
     api.create_space(repo_id=SPACE_ID, space_sdk="gradio", token=HF_TOKEN, private=False)
     print("  Created OK", flush=True)
     time.sleep(5)
 except Exception as e:
-    print(f"  Create failed: {e}", flush=True)
-    traceback.print_exc()
+    print(f"  Create failed: {type(e).__name__}: {e}", flush=True)
 
-# Upload files
+# Upload files one by one
 for fname in ["app.py", "requirements.txt", "README.md"]:
     print(f"Uploading {fname}...", flush=True)
     try:
@@ -80,25 +67,16 @@ for fname in ["app.py", "requirements.txt", "README.md"]:
         )
         print(f"  {fname} OK", flush=True)
     except Exception as e:
-        print(f"  {fname} FAILED: {e}", flush=True)
+        print(f"  {fname} FAILED: {type(e).__name__}: {e}", flush=True)
 
-# Wait and check
-def check_stage():
-    try:
-        url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
-        with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-            state = json.loads(resp.read())
-            return state.get("stage")
-    except Exception:
-        return "UNKNOWN"
+# Quick status check
+time.sleep(10)
+try:
+    url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
+    with urllib.request.urlopen(urllib.request.Request(url)) as resp:
+        state = json.loads(resp.read())
+        print(f"Stage: {state.get('stage')}", flush=True)
+except Exception as e:
+    print(f"Status check failed: {e}", flush=True)
 
-print("Waiting for Space to build...", flush=True)
-for i in range(12):
-    time.sleep(10)
-    stage = check_stage()
-    print(f"  Check {i+1}: {stage}", flush=True)
-    if stage in ("RUNNING", "RUNTIME_ERROR"):
-        break
-
-print(f"FINAL: {check_stage()}", flush=True)
 print("=== DONE ===", flush=True)
