@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Minimal Space: only app.py + empty requirements, default README."""
+"""Fix Space v3: pin gradio 5.44.0, upload app.py + requirements.txt + README."""
 import sys, os, time, json, urllib.request, traceback
-print("=== MINIMAL SPACE ===", flush=True)
+print("=== FIX SPACE v3 (gradio 5.44.0 pin) ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -16,11 +16,39 @@ import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
 
-# Download app.py from GitHub
+# Download app.py from GitHub main branch
+print("Downloading app.py from GitHub...", flush=True)
 urllib.request.urlretrieve(
     "https://raw.githubusercontent.com/NyxSpecter4/bountywarz-ops/main/kin-spaces/app.py",
     "/tmp/app.py"
 )
+with open("/tmp/app.py") as f:
+    print("  app.py size:", len(f.read()), "bytes", flush=True)
+
+# Write requirements.txt - pin gradio 5.44.0 + audioop-lts for Python 3.13
+REQS = "huggingface_hub>=0.26.0\naudioop-lts\n"
+with open("/tmp/requirements.txt", "w") as f:
+    f.write(REQS)
+print("  requirements.txt written", flush=True)
+
+# Write README.md with sdk_version 5.44.0
+README_CONTENT = (
+    "---\n"
+    "title: KIN Cybersecurity AI\n"
+    "emoji: \U0001f6e1\n"
+    "colorFrom: blue\n"
+    "colorTo: red\n"
+    "sdk: gradio\n"
+    "sdk_version: 5.44.0\n"
+    "python_version: '3.13'\n"
+    "app_file: app.py\n"
+    "pinned: false\n"
+    "---\n\n"
+    "KIN \u2014 Cybersecurity AI. Direct, opinionated security advice powered by KIN v6 DPO (Qwen2.5-0.5B).\n"
+)
+with open("/tmp/README.md", "w") as f:
+    f.write(README_CONTENT)
+print("  README.md written", flush=True)
 
 # Delete old Space
 print("Deleting old Space...", flush=True)
@@ -47,31 +75,36 @@ except Exception as e:
     print(f"  Create FAILED: {type(e).__name__}: {e}", flush=True)
     sys.exit(1)
 
-# Upload ONLY app.py (keep default README with sdk_version 6.26.0)
-# No requirements.txt upload (build system handles gradio install)
-print("Uploading app.py only...", flush=True)
+# Upload ALL files in one commit
+print("Uploading app.py + requirements.txt + README.md...", flush=True)
 try:
-    api.upload_file(
-        path_or_fileobj="/tmp/app.py",
-        path_in_repo="app.py",
+    api.create_commit(
         repo_id=SPACE_ID,
         repo_type="space",
         token=HF_TOKEN,
+        commit_message="Fix: pin gradio 5.44.0, add requirements.txt + README",
+        operations=[
+            CommitOperationAdd(path_in_repo="app.py", path_or_fileobj="/tmp/app.py"),
+            CommitOperationAdd(path_in_repo="requirements.txt", path_or_fileobj="/tmp/requirements.txt"),
+            CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="/tmp/README.md"),
+        ],
     )
-    print("  app.py uploaded OK", flush=True)
+    print("  All files uploaded OK", flush=True)
 except Exception as e:
-    print(f"  app.py upload FAILED: {type(e).__name__}: {e}", flush=True)
+    print(f"  Upload FAILED: {type(e).__name__}: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
 # Wait for build
 print("Waiting for build...", flush=True)
 url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
-for i in range(12):
+for i in range(20):
     time.sleep(15)
     try:
         with urllib.request.urlopen(urllib.request.Request(url)) as resp:
             state = json.loads(resp.read())
             stage = state.get("stage")
-            err = state.get("errorMessage", "")[:200]
+            err = state.get("errorMessage", "")[:300]
             print(f"  Check {i+1}: {stage}" + (f" err={err}" if err and stage not in ("BUILDING",) else ""), flush=True)
             if stage == "RUNNING":
                 print("  SPACE IS RUNNING!", flush=True)
