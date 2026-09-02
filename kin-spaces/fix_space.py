@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Fix KIN Space: update README + requirements, restart."""
+"""Fix KIN Space: valid emoji in README + minimal requirements + restart."""
 import sys, os, time, traceback, json, urllib.request
-print("=== FIX SPACE ===", flush=True)
+print("=== FIX SPACE V3 ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -16,20 +16,16 @@ import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
 
-# Verify token
-who = api.whoami()
-print(f"User: {who.get('name')}", flush=True)
-
-# Write new requirements.txt (no gradio pin)
+# Write minimal requirements.txt (only audioop-lts needed, build system installs gradio+deps)
 with open("/tmp/requirements.txt", "w") as f:
-    f.write("huggingface_hub>=0.26,<0.30\n")
     f.write("audioop-lts;python_version>='3.13'\n")
 
-# Write new README.md with sdk_version 5.0.0
+# Write README.md with VALID emoji (must be Unicode pictographic)
+# Use shield emoji U+1F6E1 U+FE0F
 with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("title: Kin Inference\n")
-    f.write("emoji: KIN\n")
+    f.write("emoji: \U0001F6E1\U0000FE0F\n")
     f.write("colorFrom: indigo\n")
     f.write("colorTo: red\n")
     f.write("sdk: gradio\n")
@@ -51,13 +47,12 @@ try:
         repo_id=SPACE_ID,
         repo_type="space",
         operations=operations,
-        commit_message="Fix requirements + README sdk_version=5.0.0",
+        commit_message="Fix README emoji + sdk_version=5.0.0 + minimal requirements",
         token=HF_TOKEN,
     )
     print(f"  create_commit OK: {commit_info}", flush=True)
 except Exception as e:
     print(f"  create_commit FAILED: {type(e).__name__}: {e}", flush=True)
-    traceback.print_exc()
     # Fallback: upload individually
     for fname in ["requirements.txt", "README.md"]:
         try:
@@ -72,7 +67,7 @@ except Exception as e:
         except Exception as e2:
             print(f"  {fname} upload_file FAILED: {type(e2).__name__}: {e2}", flush=True)
 
-# Wait for build
+# Wait and check
 time.sleep(10)
 try:
     url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
@@ -82,7 +77,7 @@ try:
 except Exception as e:
     print(f"Status: {e}", flush=True)
 
-# Factory reboot
+# Factory reboot to trigger fresh build
 print("Factory reboot...", flush=True)
 try:
     api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
@@ -90,8 +85,8 @@ try:
 except Exception as e:
     print(f"  Reboot FAILED: {type(e).__name__}: {e}", flush=True)
 
-# Wait for build
-for i in range(8):
+# Wait for build (gradio 5.0.0 build should be faster than 6.26.0)
+for i in range(10):
     time.sleep(15)
     try:
         url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
