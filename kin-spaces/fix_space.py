@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Fix Space v3: pin gradio 5.44.0, upload app.py + requirements.txt + README."""
+"""Fix Space v4: upload files to existing Space (no delete/create)."""
 import sys, os, time, json, urllib.request, traceback
-print("=== FIX SPACE v3 (gradio 5.44.0 pin) ===", flush=True)
+print("=== FIX SPACE v4 (update existing, gradio 5.44.0) ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -23,15 +23,17 @@ urllib.request.urlretrieve(
     "/tmp/app.py"
 )
 with open("/tmp/app.py") as f:
-    print("  app.py size:", len(f.read()), "bytes", flush=True)
+    content = f.read()
+    print("  app.py size:", len(content), "bytes", flush=True)
 
-# Write requirements.txt - pin gradio 5.44.0 + audioop-lts for Python 3.13
+# Write requirements.txt - gradio 5.44.0 pinned via README sdk_version
+# huggingface_hub for InferenceClient, audioop-lts for Python 3.13 pydub compat
 REQS = "huggingface_hub>=0.26.0\naudioop-lts\n"
 with open("/tmp/requirements.txt", "w") as f:
     f.write(REQS)
 print("  requirements.txt written", flush=True)
 
-# Write README.md with sdk_version 5.44.0
+# Write README.md with sdk_version 5.44.0 (not 6.x)
 README_CONTENT = (
     "---\n"
     "title: KIN Cybersecurity AI\n"
@@ -48,19 +50,10 @@ README_CONTENT = (
 )
 with open("/tmp/README.md", "w") as f:
     f.write(README_CONTENT)
-print("  README.md written", flush=True)
+print("  README.md written (sdk_version: 5.44.0)", flush=True)
 
-# Delete old Space
-print("Deleting old Space...", flush=True)
-try:
-    api.delete_repo(repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
-    print("  Deleted OK", flush=True)
-    time.sleep(10)
-except Exception as e:
-    print(f"  Delete failed (ok): {e}", flush=True)
-
-# Create new Space
-print("Creating new Space...", flush=True)
+# Try to create the Space if it doesn't exist, otherwise just upload
+print("Ensuring Space exists...", flush=True)
 try:
     api.create_repo(
         repo_id=SPACE_ID,
@@ -69,20 +62,24 @@ try:
         token=HF_TOKEN,
         space_sdk="gradio",
     )
-    print("  Created OK!", flush=True)
-    time.sleep(10)
+    print("  Created new Space!", flush=True)
+    time.sleep(5)
 except Exception as e:
-    print(f"  Create FAILED: {type(e).__name__}: {e}", flush=True)
-    sys.exit(1)
+    err_str = str(e)
+    if "409" in err_str or "already" in err_str.lower():
+        print("  Space already exists (OK)", flush=True)
+    else:
+        print(f"  Create error: {type(e).__name__}: {err_str[:200]}", flush=True)
+        # Continue anyway - try to upload
 
-# Upload ALL files in one commit
+# Upload ALL files in one commit (overwrites existing)
 print("Uploading app.py + requirements.txt + README.md...", flush=True)
 try:
     api.create_commit(
         repo_id=SPACE_ID,
         repo_type="space",
         token=HF_TOKEN,
-        commit_message="Fix: pin gradio 5.44.0, add requirements.txt + README",
+        commit_message="Fix: pin gradio 5.44.0, add requirements.txt",
         operations=[
             CommitOperationAdd(path_in_repo="app.py", path_or_fileobj="/tmp/app.py"),
             CommitOperationAdd(path_in_repo="requirements.txt", path_or_fileobj="/tmp/requirements.txt"),
@@ -96,7 +93,7 @@ except Exception as e:
     sys.exit(1)
 
 # Wait for build
-print("Waiting for build...", flush=True)
+print("Waiting for build (up to 5 min)...", flush=True)
 url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
 for i in range(20):
     time.sleep(15)
