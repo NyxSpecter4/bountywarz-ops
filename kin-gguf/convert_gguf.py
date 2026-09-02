@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert KIN v6 to GGUF â targets kinetigor-dpo-cybersec (Qwen2.5-0.5B DPO merged)."""
+"""Convert KIN v6 to GGUF — targets kinetigor-dpo-cybersec (Qwen2.5-0.5B DPO merged)."""
 import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
@@ -16,14 +16,13 @@ GGUF_REPO = "nyxspecter4/kinetigor-dpo-cybersec-gguf"
 
 from huggingface_hub import HfApi, snapshot_download
 api = HfApi(token=HF_TOKEN)
-print("huggingface_hub:", __import__('huggingface_hub').__version__, flush=True)
+import huggingface_hub
+print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 print("HfApi initialized", flush=True)
-
-# Validate token
 print("Validating token...", flush=True)
 try:
     info = api.whoami()
-    print(f"Token valid! Account: {info.get('name', 'unknown')}", flush=True)
+    print(f"Token valid! Account: {info.get(chr(39)+chr(110)+chr(97)+chr(109)+chr(101)+chr(39), chr(117)+chr(110)+chr(107))}", flush=True)
 except Exception as e:
     print(f"TOKEN INVALID: {e}", flush=True)
     import traceback; traceback.print_exc()
@@ -39,20 +38,109 @@ def write_progress(msg):
             repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
         os.unlink(p)
     except Exception as e:
-        print(f"[WARN] Failed toüÝÉ¥ÑÁÉ½ÉÍÌèíô°±ÕÍ õQÉÕ¤()ÉÕ¸¡µ°¨©­Ü¤è(ÁÉ¥¹Ð¡øøøì¹©½¥¸¡µ¤¥¥Í¥¹ÍÑ¹¡µ°±¥ÍÐ¤±Íµô°±ÕÍ õQÉÕ¤(ÉÑÕÉ¸ÍÕÁÉ½ÍÌ¹ÉÕ¸¡µ°¡¬õQÉÕ°¨©­Ü¤()ÉÕ¹}ÁÑÕÉ¡µ¤è(ÁÉ¥¹Ð¡øøøì¹©½¥¸¡µ¥ô°±ÕÍ õQÉÕ¤(ÈôÍÕÁÉ½ÍÌ¹ÉÕ¸¡µ°ÁÑÕÉ}½ÕÑÁÕÐõQÉÕ°ÑáÐõQÉÕ¤(¥È¹ÍÑ½ÕÐè(ÁÉ¥¹Ð¡È¹ÍÑ½ÕÑl´ÈÀÀÀét°±ÕÍ õQÉÕ¤(¥È¹ÍÑÉÈè(ÁÉ¥¹Ð¡È¹ÍÑÉÉl´ÈÀÀÀét°±ÕÍ õQÉÕ¤(ÉÑÕÉ¸È¹ÉÑÕÉ¹½°È¹ÍÑ½ÕÐ°È¹ÍÑÉÈ() ¤è(ÍÕÁÉ½ÍÌ¹ÉÕ¸¡l°µ °¼t°¡¬õ±Í¤()ÑÉäè(ÁÉ¥¹Ð ô¨ØÀ¤(ÁÉ¥¹Ð -%8ØØU=9YIM%=8¡­¥¹Ñ¥½ÈµÁ¼µåÉÍ°EÝ¸È¸Ô´À¸Õ¤¤(ÁÉ¥¹Ð ô¨ØÀ¤( ¤((À¸É¥Í¬(ÝÉ¥Ñ}ÁÉ½ÉÍÌ MÑÀÀèÉ¥¹¥Í¬¸¸¸¤(ÉÕ¸¡lÍÕ¼°É´°µÉ°½ÕÍÈ½Í¡É½½Ñ¹Ð°½ÕÍÈ½±½°½±¥½¹É½¥°(½½ÁÐ½¡°½ÕÍÈ½±½°¼¹¡ÕÀ°½ÕÍÈ½±½°½Í¡É½½½ÍÐ°(½ÕÍÈ½±½°½Í¡É½ÉÕÍÐ°½½ÁÐ½èt¤( ¤((Á¸%¹ÍÑ±°10ÁÌ¹½ÈÁÑ¡¥¹¡Ñ½É °¹ÕµÁä°ÍÑ¹Í½ÉÌ¤(ÝÉ¥Ñ)}ÁÉ½ÉÍÌ MÑÀÁè%¹ÍÑ±±¥¹Ñ½É ¬¹ÕµÁä¬ÍÑ¹Í½ÉÌ¡É±ä¤¸¸¸¤(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°¹ÕµÁät¤(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°Ñ½É °(´µ¥¹àµÕÉ°°¡ÑÑÁÌè¼½½Ý¹±½¹ÁåÑ½É ¹½É½Ý¡°½ÁÔt¤(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°ÍÑ¹Í½ÉÌt¤(É°½ÕÐ°ÉÈôÉÕ¹}ÁÑÕÉ¡mÍåÌ¹áÕÑ±°µ°(¥µÁ½ÉÐÑ½É °¹ÕµÁä°ÍÑ¹Í½ÉÌìÁÉ¥¹Ð Ñÿÿ6rÂF÷&6åõ÷fW'6öåõò²&çBvçV×rÂçV×åõ÷fW'6öåõò²&çBw6fWFVç6÷'2ô²r%Ò¢b&2Ò ¢w&FU÷&öw&W72b$dÄTC¢V&Ç×÷'B6V6²fÆVC¥Æç¶W''Ò"¢72æWB¢Fb ¢2âF÷væÆöBÖöFVÂcb26ævÆRÖöFVÂç6fWFVç6÷'2Âãt"¢w&FU÷&öw&W72%7FW¢F÷væÆöFærÖöFVÂãt"âââ"¢ÖöFVÅöF"Ò6æ6÷EöF÷væÆöB¢&WõöCÔÔôDTÅôBÂFö¶VãÔeõDô´TâÂÆö6ÅöF#Ò"âöÖöFVÂ"À¢ÆÆ÷u÷GFW&ç3Õ°¢&6öæfræ§6öâ"Â&vVæW&Föåö6öæfræ§6öâ"À¢&ÖöFVÂç6fWFVç6÷'2"Â&ÖöFVÂÒ¢ç6fWFVç6÷'2"Â&ÖöFVÂç6fWFVç6÷'2ææFWæ§6öâ"À¢'Fö¶Væ¦W"æ§6öâ"Â'Fö¶Væ¦W%ö6öæfræ§6öâ"À¢'7V6Å÷Fö¶Vç5öÖæ§6öâ"Â&ÖW&vW2çGB"À¢'fö6"æ§6öâ"Â&FFVE÷Fö¶Vç2æ§6öâ"À¢ÒÀ¢¢&çBb$ÖöFVÂF#¢¶ÖöFVÅöF'Ò"¢f÷"bâ6÷'FVB÷2æÆ7FF"ÖöFVÅöF" ¢gÒ÷2çFæ¦öâÖöFVÅöF"Âb¢7¢Ò÷2çFævWG6¦Rgb÷2çFæ6fÆRgVÇ6R$D" ¢&çBb"¶gÒ·7§Ò"¢Fb ¢2"â6V6²f÷"æ&6UöÆW"ââ6fWFVç6÷'26¶bæòæFW(	B6ævÆRfÆR2Ç&VGÖW&vVB¢w&FU÷&öw&W72%7FW#¢6V6¶ærFVç6÷"æÖW2f÷"TeB'Ff7G2âââ"¢æFW÷FÒ÷2çFæ¦öâÖöFVÅöF"Â&ÖöFVÂç6fWFVç6÷'2ææFWæ§6öâ"¢æVVG5÷F6ÒfÇ6P¢b÷2çFæW7G2æFW÷F ¢vF÷VâæFW÷F2c ¢GÒ§6öâæÆöBb¢vÒÒGævWB'vVvEöÖ"Â·Ò¢&6UöÆW%ö¶W2Ò¶²f÷"²âvÒb"æü\ÙWÛ^Y\[×BÜWÚÙ^\ÈHÚÈÜÈ[ÛHYÜWÐK[ÈÜÜWÐ[ÈÜÜWÙ[XY[È[×BY\ÙWÛ^Y\ÚÙ^\Î[
-Ý[Û[\ÙWÛ^Y\ÚÙ^\Ê_H[ÛÜÈÚ]\ÙWÛ^Y\Y^BYY×Ü]ÚHYB]×ÝÛHHßBÜË[ÛK][\Ê
-NYÜWÐK[ÈÜÜWÐ[ÈÜÜWÙ[XY[È[ÎÛÛ[YB]×ÚÈHË\XÙJ\ÙWÛ^Y\B]×ÝÛVÛ]×Ú×HHYÈÙZYÚÛX\HH]×ÝÛBÚ]Ü[[^Ü]ÈH\ÈÛÛ[\
-YB[
-]ÚY[^Û[ÛJ_HOÛ[]×ÝÛJ_H[ÛÜÈBYYY×Ü]ÚÜ]WÜÙÜ\ÜÊÝ\XÎ]Ú[ÈØY][ÛÜÈ[\ÈÈ[[ÝH\ÙWÛ^Y\BÛHØY][ÛÜËÜÚ[\ÜØYÙ[KØ]WÙ[BÚ\Ù[\ÈHÛÜY
-ÙÜ[ÜË\Ý\[Ù[Ù\HY[ÝÚ]
-ØY][ÛÜÈWJBÜÚ\[Ú\Ù[\ÎÚ\Ü]HÜË]Ú[[Ù[Ù\Ú\
-B[
-ØY[ÈÜÚ\KB[ÛÜÈHØYÙ[JÚ\Ü]
-B[
-ØYYÛ[[ÛÜÊ_H[ÛÜÈBÙ^\×Ý×Ü[[YHHÚÈÜÈ[\Ý
-[ÛÜËÙ^\Ê
-JHY\ÙWÛ^Y\[×BÜÈ[Ù^\×Ý×Ü[[YN]×ÚÈHË\XÙJ\ÙWÛ^Y\B[ÛÜÖÛ]×Ú×HH[ÛÜËÜ
-ÊBÜWÚÙ^\ÿ= [k for k in list(tensors.keys()) if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
+        print(f"[WARN] Failed to write progress: {e}", flush=True)
+
+def run(cmd, **kw):
+    print(f">>> {' '.join(cmd) if isinstance(cmd, list) else cmd}", flush=True)
+    return subprocess.run(cmd, check=True, **kw)
+
+def run_capture(cmd):
+    print(f">>> {' '.join(cmd)}", flush=True)
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.stdout:
+        print(r.stdout[-2000:], flush=True)
+    if r.stderr:
+        print(r.stderr[-2000:], flush=True)
+    return r.returncode, r.stdout, r.stderr
+
+def df():
+    subprocess.run(["df", "-h", "/"], check=False)
+
+try:
+    print("=" * 60)
+    print("KIN v6 GGUF CONVERSION (kinetigor-dpo-cybersec, Qwen2.5-0.5B)")
+    print("=" * 60)
+    df()
+
+    # 0. Free disk
+    write_progress("Step 0: Freeing disk...")
+    run(["sudo", "rm", "-rf", "/usr/share/dotnet", "/usr/local/lib/android",
+         "/opt/ghc", "/usr/local/.ghcup", "/usr/local/share/boost",
+         "/usr/local/share/rust", "/opt/az"])
+    df()
+
+    # 0b. Install ALL deps needed for patching (torch, numpy, safetensors)
+    write
+_progress("Step 0b: Installing torch + numpy + safetensors (early)...")
+    run([sys.executable, "-m", "pip", "install", "numpy"])
+    run([sys.executable, "-m", "pip", "install", "torch",
+         "--index-url", "https://download.pytorch.org/whl/cpu"])
+    run([sys.executable, "-m", "pip", "install", "safetensors"])
+    rc, out, err = run_capture([sys.executable, "-c",
+        "import torch, numpy, safetensors; print('torch', torch.__version__); print('numpy', numpy.__version__); print('safetensors OK')"])
+    if rc != 0:
+        write_progress(f"FAILED: early import check failed:\n{err}")
+        sys.exit(1)
+    df()
+
+    # 1. Download model (v6 has single model.safetensors, 1.88GB)
+    write_progress("Step 1: Downloading model (1.88GB)...")
+    model_dir = snapshot_download(
+        repo_id=MODEL_ID, token=HF_TOKEN, local_dir="./model",
+        allow_patterns=[
+            "config.json", "generation_config.json",
+            "model.safetensors", "model-*.safetensors", "model.safetensors.index.json",
+            "tokenizer.json", "tokenizer_config.json",
+            "special_tokens_map.json", "merges.txt",
+            "vocab.json", "added_tokens.json",
+        ],
+    )
+    print(f"Model dir: {model_dir}")
+    for f in sorted(os.listdir(model_dir)):
+        fp = os.path.join(model_dir, f)
+        sz = os.path.getsize(fp) if os.path.isfile(fp) else "DIR"
+        print(f"  {f} ({sz})")
+    df()
+
+    # 1b. Check for .base_layer. in safetensors (skip if no index — single file is already merged)
+    write_progress("Step 1b: Checking tensor names for PEFT artifacts...")
+    index_path = os.path.join(model_dir, "model.safetensors.index.json")
+    needs_patch = False
+    if os.path.exists(index_path):
+        with open(index_path) as f:
+            idx = json.load(f)
+        wm = idx.get("weight_map", {})
+        base_layer_keys = [k for k in wm if ".base_layer." in k]
+        lora_keys = [k for k in wm if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
+      
+  if base_layer_keys:
+            print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
+            needs_patch = True
+            new_wm = {}
+            for k, v in wm.items():
+                if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k:
+                    continue
+                new_k = k.replace(".base_layer.", ".")
+                new_wm[new_k] = v
+            idx["weight_map"] = new_wm
+            with open(index_path, "w") as f:
+                json.dump(idx, f)
+            print(f"Patched index: {len(wm)} -> {len(new_wm)} tensors")
+
+    if needs_patch:
+        write_progress("Step 1c: Patching safetensors files to remove .base_layer. ...")
+        from safetensors.torch import load_file, save_file
+        shard_files = sorted([f for f in os.listdir(model_dir) if f.endswith(".safetensors")])
+        for shard in shard_files:
+            shard_path = os.path.join(model_dir, shard)
+            print(f"  Loading {shard}...")
+            tensors = load_file(shard_path)
+            print(f"  Loaded {len(tensors)} tensors")
+            keys_to_rename = [k for k in list(tensors.keys()) if ".base_layer." in k]
+            for k in keys_to_rename:
+                new_k = k.replace(".base_layer.", ".")
+                tensors[new_k] = tensors.pop(k)
+            lora_keys = [k for k in list(tensors.keys()) if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
             for k in lora_keys:
                 del tensors[k]
             print(f"  Renamed {len(keys_to_rename)} tensors, removed {len(lora_keys)} LoRA tensors")
@@ -61,7 +149,7 @@ JHY\ÙWÛ^Y\[×BÜÈ[Ù^\×Ý×Ü
             print(f"  Saved {shard}")
         write_progress("Step 1c: Safetensors patched successfully")
     else:
-        print("No .base_layer. artifacts found â no patching needed")
+        print("No .base_layer. artifacts found — no patching needed")
     df()
 
     # 2. Clone llama.cpp
@@ -86,11 +174,116 @@ JHY\ÙWÛ^Y\[×BÜÈ[Ù^\×Ý×Ü
               "llama.cpp/llama-quantize",
               "llama.cpp/build/llama-quantize"]:
         if os.path.exists(p):
-            quantizeÿÿÀ(É¬(¥¹½ÐÅÕ¹Ñ¥éè(ÍÕÁÉ½ÍÌ¹ÉÕ¸¡l¥¹°±±µ¹ÁÀ°µ¹µ°©ÅÕ¹Ñ¥é¨°µÑåÁ°t°¡¬õ±Í¤(ÝÉ¥Ñ}ÁÉ½ÉÍÌ %1è¹¼ÅÕ¹Ñ¥é¥¹Éä½Õ¹¤(ÍåÌ¹á¥Ð Ä¤(ÁÉ¥¹Ð¡ÅÕ¹Ñ¥éèíÅÕ¹Ñ¥éô¤( ¤((=9YIPô±±µ¹ÁÀ½½¹ÙÉÑ}¡}Ñ½}Õ¹Áä(¥¹½Ð½Ì¹ÁÑ ¹á¥ÍÑÌ¡=9YIP¤è(½È±Ð¥¸l±±µ¹ÁÀ½½¹ÙÉÑ}¡}Ñ½}Õ¹Áä°(±±µ¹ÁÀ½ÍÉ¥ÁÑÌ½½¹ÙÉÑ}¡}Ñ½}Õ¹Áätè(¥½Ì¹ÁÑ ¹á¥ÍÑÌ¡±Ð¤è(=9YIPô±Ð(É¬(±Íè(ÝÉ¥Ñ}ÁÉ½ÉÍÌ¡%1è½¹ÙÉÐÍÉ¥ÁÐ¹½Ð½Õ¹¤(ÍåÌ¹á¥Ð Ä¤(ÁÉ¥¹Ð¡½¹ÙÉÐÍÉ¥ÁÐèí=9YIQô¤((Ð¸%¹ÍÑ±°Éµ¥¹¥¹ÁÌ(ÝÉ¥Ñ}ÁÉ½ÉÍÌ MÑÀÐè%¹ÍÑ±±¥¹Éµ¥¹¥¹ÁÌ¸¸¸¤(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°´µÕÁÉ°Á¥Àt¤(ÉÄô±±µ¹ÁÀ½ÉÅÕ¥Éµ¹ÑÌ½ÉÅÕ¥Éµ¹ÑÌµ½¹ÙÉÑ}¡}Ñ½}Õ¹ÑáÐ(¥½Ì¹ÁÑ ¹á¥ÍÑÌ¡ÉÄ¤è(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°µÈ°ÉÅt¤(±Íè(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°ÑÉ¹Í½ÉµÉÌ°¹ÕµÁä°Õ°Í¹Ñ¹Á¥t¤(ÉÕ¸¡mÍåÌ¹áÕÑ±°µ´°Á¥À°¥¹ÍÑ±°°±ÉÑt¤((½ÈÁ­¥¸lÕ(°ÑÉ¹Í½ÉµÉÌ°Ñ½É °¹ÕµÁätè(É°½ÕÐ°ÉÈôÉÕ¹}ÁÑÕÉ¡mÍåÌ¹áÕÑ±°µ°(¥µÁ½ÉÐíÁ­ôìÁÉ¥¹Ð íÁ­ô°ÑÑÑÈ¡íÁ­ô°}}ÙÉÍ¥½¹}|°=,¤¤t¤(¥ÉôÀè(ÝÉ¥Ñ}ÁÉ½ÉÍÌ¡ÿ$dÄTC¢6ææ÷B×÷'B·¶wÓ¥Æç¶W''Ò"¢72æWB¢Fb ¢2Râ6öçfW'BFòc`¢w&FU÷&öw&W72%7FWV¢6öçfW'FærFòcbtuTbâââ"¢&2Â÷WBÂW'"Ò'Våö6GW&R·72æWV7WF&ÆRÂ4ôådU%BÂÖöFVÅöF"À¢"ÒÖ÷WGGR"Â&cb"Â"ÒÖ÷WFfÆR"Â&¶æWFv÷"×cbÖcbævwVb%Ò¢b&2Ò ¢w&FU÷&öw&W72b$dÄTBB7FWV6öçfW'Bcb¥Æå5DDõUC¥Æç¶÷WE²Ó3¥×ÕÆå5DDU%#¥Æç¶W'%²Ó3¥×Ò"¢72æWB¢Fb ¢2V"âg&VRÖöFVÂF ¢w&FU÷&öw&W72%7FWV#¢g&VVærÖöFVÂF"âââ"¢6WFÂç&×G&VR"âöÖöFVÂ"Âvæ÷&UöW'&÷'3ÕG'VR¢Fb ¢2bâVçF¦Róg&öÒc`¢w&FU÷&öw&W72%7FWc¢VçF¦æróâââ"¢&2Â÷WBÂW'"Ò'Våö6GW&R·VçF¦RÂ&¶æWFv÷"×cbÖcbævwVb"À¢&¶æWFv÷"×cb×óævwVb"Â%ó%Ò¢b&2Ò ¢w&FU÷&öw&W72b$dÄTBB7FWbVçF¦Ró¥Æå5DDõUC¥Æç¶÷WE²Ó3¥×ÕÆå5DDU%#¥Æç¶W'%²Ó3¥×Ò"¢72æWB¢Fb ¢2râVçF¦REôµôÒg&öÒc`¢w&FU÷&öw&W72%7FWs¢VçF¦ærEôµôÒâââ"¢&2Â÷WBÂW'"Ò'Våö6GW&R·VçF¦RÂ&¶æWFv÷"×cbÖcbævwVb"À¢&¶æWFv÷"×cb×EöµöÒævwVb"Â%EôµôÒ%Ò¢b&2Ò ¢w&FU÷&öw&W72b$dÄTBB7FWrVçF¦REôµôÒ¥Æå5DDõUC¥Æç¶÷WE²Ó3¥×ÕÆå5DDU%#¥Æç¶W'%²Ó3¥×Ò"¢72æWB¢Fb ¢2v"âg&VRc`¢w&FU÷&öw&W72%7FWv#¢g&VVærcbâââ"¢÷2çVæÆæ²&¶æWFv÷"×cbÖcbævwVb"¢Fb ¢2âWÆö@¢w&FU÷&öw&W72%7FW¢WÆöFæÿÿÈBÜX]WÜ\ÊÑÕQÔTË\×Ý\OH[Ù[]]OQ[ÙKÚÙ[RÕÒÑS^\ÝÛÚÏUYJBÜ]WÜÙÜ\ÜÊ\ØY[ÈMÒ×ÓKB\K\ØYÙ[J]ÛÜÙ[[ØHÚ[]YÛÜ]\MÚ×ÛKÙÝY]Ú[Ü\ÏHÚ[]YÛÜ]TMÒ×ÓKÙÝY\×ÚYQÑÕQÔTË\×Ý\OH[Ù[ÚÙ[RÕÒÑSBÜ]WÜÙÜ\ÜÊ\ØY[ÈNÌB\K\ØYÙ[J]ÛÜÙ[[ØHÚ[]YÛÜ]\NÌÙÝY]Ú[Ü\ÏHÚ[]YÛÜ]TNÌÙÝY\×ÚYQÑÕQÔTË\×Ý\OH[Ù[ÚÙ[RÕÒÑSBØ\Ü]HÚ[YÙÝYÙÙÝYÛ[Ù[ØØ\YYÜË]^\ÝÊØ\Ü]
-NÜ]WÜÙÜ\ÜÊ\ØY[È[Ù[Ø\B\K\ØYÙ[J]ÛÜÙ[[ØXØ\Ü]]Ú[Ü\ÏHPQQKY\×ÚYQÑÕQÔTË\×Ý\OH[Ù[ÚÙ[RÕÒÑSBN\K[]WÙ[J]Ú[Ü\ÏHÑÕQÔÑÔTÔËY\×ÚYSSÑSÒQ\×Ý\OH[Ù[ÚÙ[RÕÒÑSB^Ù\\ÜÂÜ]WÜÙÜ\ÜÊÕPÐÑTÔÈHÑÕQ\ØYYÈ
-ÈÑÕQÔTÊB[
-ÕPÐÑTÔÈHÑÕQ]
-ÈÑÕQÔTÊB^Ù\^Ù\[Û\ÈNHXÙXXÚËÜX]Ù^Ê
-B[
-\ÚUYJBÜ]WÜÙÜ\ÜÊVÑTSÓÝËM_HBÞ\Ë^]
-ÿÿ
+            quantize = p
+            break
+    if not quantize:
+        subprocess.run(["find", "llama.cpp", "-name", "*quantize*", "-type", "f"], check=False)
+        write_progress("FAILED: no quantize binary found")
+        sys.exit(1)
+    print(f"quantize: {quantize}")
+    df()
+
+    CONVERT = "llama.cpp/convert_hf_to_gguf.py"
+    if not os.path.exists(CONVERT):
+        for alt in ["llama.cpp/convert_hf_to_gguf.py",
+                     "llama.cpp/scripts/convert_hf_to_gguf.py"]:
+            if os.path.exists(alt):
+                CONVERT = alt
+                break
+        else:
+            write_progress(f"FAILED: convert script not found")
+            sys.exit(1)
+    print(f"convert script: {CONVERT}")
+
+    # 4. Install remaining deps
+    write_progress("Step 4: Installing remaining deps...")
+    run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+    req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
+    if os.path.exists(req):
+        run([sys.executable, "-m", "pip", "install", "-r", req])
+    else:
+        run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
+    run([sys.executable, "-m", "pip", "install", "accelerate"])
+
+    for pkg in ["gguf"
+, "transformers", "torch", "numpy"]:
+        rc, out, err = run_capture([sys.executable, "-c",
+            f"import {pkg}; print('{pkg}', getattr({pkg}, '__version__', 'OK'))"])
+        if rc != 0:
+            write_progress(f"FAILED: cannot import {pkg}:\n{err}")
+            sys.exit(1)
+    df()
+
+    # 5. Convert to F16
+    write_progress("Step 5a: Converting to F16 GGUF...")
+    rc, out, err = run_capture([sys.executable, CONVERT, model_dir,
+         "--outtype", "f16", "--outfile", "kinetigor-v6-f16.gguf"])
+    if rc != 0:
+        write_progress(f"FAILED at step 5a (convert F16):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 5b. Free model dir
+    write_progress("Step 5b: Freeing model dir...")
+    shutil.rmtree("./model", ignore_errors=True)
+    df()
+
+    # 6. Quantize Q8_0 from F16
+    write_progress("Step 6: Quantizing Q8_0...")
+    rc, out, err = run_capture([quantize, "kinetigor-v6-f16.gguf",
+         "kinetigor-v6-q8_0.gguf", "Q8_0"])
+    if rc != 0:
+        write_progress(f"FAILED at step 6 (quantize Q8_0):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 7. Quantize Q4_K_M from F16
+    write_progress("Step 7: Quantizing Q4_K_M...")
+    rc, out, err = run_capture([quantize, "kinetigor-v6-f16.gguf",
+         "kinetigor-v6-q4_k_m.gguf", "Q4_K_M"])
+    if rc != 0:
+        write_progress(f"FAILED at step 7 (quantize Q4_K_M):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
+        sys.exit(1)
+    df()
+
+    # 7b. Free F16
+    write_progress("Step 7b: Freeing F16...")
+    os.unlink("kinetigor-v6-f16.gguf")
+    df()
+
+    # 8. Upload
+    write_progress("Step 8: Uploading to HF...")
+    api.create_repo(repo_id=GGUF_REPO, repo_type="model", private=False, token=HF_TOKEN, exist_ok=True)
+
+    write_progress("Uploading Q4_K_M...")
+    api.upload_file(path_or_fileobj="kinetigor-v6-q4_k_m.gguf",
+        path_in_repo="kinetigor-v6-Q4_K_M.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+
+    write_progress("Uploading Q8_0...")
+    api.upload_file(path_or_fileobj="kinetigor-v6-q8_0.gguf",
+        path_in_repo="kinetigor-v6-Q8_0.gguf",
+        repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+    card_path = "kin-gguf/gguf_model_card.md"
+    if os.path.exists(card_path):
+        write_progress("Uploading model card...")
+        api.upload_file(path_or_fileobj=card_path,
+            path_in_repo="README.md",
+            repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
+    try:
+        api.delete_file(path_in_repo="GGUF_PROGRESS.md",
+            repo_id=MODEL_ID, repo_type="model", token=HF_TOKEN)
+    except:
+        pass
+
+    write_progress("SUCCESS! GGUF uploaded to " + GGUF_REPO)
+    print("\nSUCCESS! GGUF at " + GGUF_REPO)
+
+except Exception as e:
+    tb = traceback.format_exc()
+    print(tb, flush=True)
+    write_progress(f"EXCEPTION:\n{tb[-4000:]}")
+    sys.exit(1)
