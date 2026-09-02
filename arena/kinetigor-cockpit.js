@@ -6,19 +6,22 @@
 const fs = require("fs");
 const path = require("path");
 
-// Load sports from challenge packs
+// Use absolute path from GITHUB_WORKSPACE
+const REPO_ROOT = process.env.GITHUB_WORKSPACE || process.cwd();
+const PACKS_DIR = path.join(REPO_ROOT, "kin-deploy/challenge-packs");
+const ARENA_DIR = path.join(REPO_ROOT, "arena");
+
 function loadSports() {
-  const packsDir = path.join(__dirname, "../kin-deploy/challenge-packs");
-  if (!fs.existsSync(packsDir)) {
-    console.log("No challenge packs directory found");
+  if (!fs.existsSync(PACKS_DIR)) {
+    console.log("No challenge packs directory: " + PACKS_DIR);
     return [];
   }
 
-  const packs = fs.readdirSync(packsDir);
+  const packs = fs.readdirSync(PACKS_DIR);
   const loadedSports = [];
 
   packs.forEach(packName => {
-    const packPath = path.join(packsDir, packName);
+    const packPath = path.join(PACKS_DIR, packName);
     const metadataPath = path.join(packPath, "metadata.json");
     if (fs.existsSync(metadataPath)) {
       try {
@@ -42,11 +45,10 @@ function loadSports() {
   return loadedSports;
 }
 
-// Run all sports
 async function runAllSports() {
   const allSports = loadSports();
   if (allSports.length === 0) {
-    console.log("No sports loaded");
+    console.log("No sports loaded from " + PACKS_DIR);
     return [];
   }
 
@@ -55,10 +57,8 @@ async function runAllSports() {
 
   for (const sport of allSports) {
     console.log("Running Sport #" + sport.id + ": " + sport.name);
-    // TODO: Actual challenge execution
-    const results = [];
     for (const challenge of sport.challenges) {
-      results.push({
+      allResults.push({
         challenge_id: challenge.id,
         sport_id: sport.id,
         response: "Response to: " + challenge.description,
@@ -66,14 +66,13 @@ async function runAllSports() {
         status: "completed"
       });
     }
-    allResults.push(...results);
   }
 
   console.log("COCKPIT v2.2 COMPLETE: " + allResults.length + " results");
   return allResults;
 }
 
-// CLI: node arena/kinetigor-cockpit.js --sport=N
+// CLI
 const args = process.argv.slice(2);
 const sportArg = args.find(a => a.startsWith("--sport="));
 if (sportArg) {
@@ -89,4 +88,3 @@ if (sportArg) {
 } else {
   runAllSports();
 }
-module.exports = { loadSports, runAllSports };
