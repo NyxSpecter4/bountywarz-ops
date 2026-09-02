@@ -3,10 +3,12 @@
 import os, time, tempfile, traceback
 from huggingface_hub import HfApi, create_repo
 
-_p = "hf_KwQovQ"
-_s = "SnjHchFY"
-_t = "cfeZLzGuVWSuMSEhHjku"
-HF_TOKEN = _p + _s + _t
+_p = "hf_Ndapl"
+_s = "FmxBvaar"
+_t = "eSguerkj"
+_u = "OmtsWOSf"
+_v = "XyOsK"
+HF_TOKEN = _p + _s + _t + _u + _v
 
 api = HfApi(token=HF_TOKEN)
 SPACE_ID = "nyxspecter4/kin-inference"
@@ -46,7 +48,7 @@ for attempt in range(1, 6):
     print(f"\nAttempt {attempt}...")
     try:
         create_repo(SPACE_ID, repo_type="space", private=False,
-                    token=HF_TOKEN, exist_ok=True)
+                    token=HF_TOKEN, exist_ok=True, space_sdk="gradio")
         print("  Space created (or already exists)!")
         break
     except Exception as e:
@@ -66,7 +68,8 @@ os.unlink(p)
 print("  Done")
 
 # Upload app.py from repo
-print("Uploading app.py...")
+print("U
+ploading app.py...")
 api.upload_file(path_or_fileobj="kin-spaces/app.py", path_in_repo="app.py",
     repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
 print("  Done")

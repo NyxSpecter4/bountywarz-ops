@@ -4,7 +4,7 @@ import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
 
-HF_TOKEN = "hf_KwQovQ" + "SnjHchFY" + "cfeZLzGuVWSuMSEhHjku"
+HF_TOKEN = "hf_Ndapl" + "FmxBvaar" + "eSguerkj" + "OmtsWOSf" + "XyOsK"
 
 MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
 GGUF_REPO = "nyxspecter4/kinetigor-dpo-cybersec-gguf"
@@ -54,7 +54,8 @@ try:
     df()
 
     # 0b. Install ALL deps needed for patching (torch, numpy, safetensors)
-    write_progress("Step 0b: Installing torch + numpy + safetensors (early)...")
+    write
+_progress("Step 0b: Installing torch + numpy + safetensors (early)...")
     run([sys.executable, "-m", "pip", "install", "numpy"])
     run([sys.executable, "-m", "pip", "install", "torch",
          "--index-url", "https://download.pytorch.org/whl/cpu"])
@@ -95,7 +96,8 @@ try:
         wm = idx.get("weight_map", {})
         base_layer_keys = [k for k in wm if ".base_layer." in k]
         lora_keys = [k for k in wm if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
-        if base_layer_keys:
+      
+  if base_layer_keys:
             print(f"Found {len(base_layer_keys)} tensors with .base_layer. prefix")
             needs_patch = True
             new_wm = {}
@@ -137,7 +139,8 @@ try:
     # 2. Clone llama.cpp
     write_progress("Step 2: Cloning llama.cpp...")
     if os.path.exists("llama.cpp"):
-        shutil.rmtree("llama.cpp")
+       
+ shutil.rmtree("llama.cpp")
     run(["git", "clone", "--depth", "1", "https://github.com/ggml-org/llama.cpp.git"])
     df()
 
@@ -186,7 +189,8 @@ try:
         run([sys.executable, "-m", "pip", "install", "transformers", "numpy", "gguf", "sentencepiece"])
     run([sys.executable, "-m", "pip", "install", "accelerate"])
 
-    for pkg in ["gguf", "transformers", "torch", "numpy"]:
+    for pkg in ["gguf"
+, "transformers", "torch", "numpy"]:
         rc, out, err = run_capture([sys.executable, "-c",
             f"import {pkg}; print('{pkg}', getattr({pkg}, '__version__', 'OK'))"])
         if rc != 0:
@@ -239,6 +243,7 @@ try:
     api.upload_file(path_or_fileobj="kinetigor-v6-q4_k_m.gguf",
         path_in_repo="kinetigor-v6-Q4_K_M.gguf",
         repo_id=GGUF_REPO, repo_type="model", token=HF_TOKEN)
+
 
     write_progress("Uploading Q8_0...")
     api.upload_file(path_or_fileobj="kinetigor-v6-q8_0.gguf",
