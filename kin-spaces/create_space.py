@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Upload app.py, requirements.txt, README.md to the KIN Space and restart it."""
-print("=== CREATE/UPDATE SPACE START ===", flush=True)
+"""Upload files to KIN Space and restart it. Uses upload_file for simplicity."""
 import sys, os, time, traceback, json
+print("=== SPACE UPLOAD + RESTART ===", flush=True)
 print("Python:", sys.version, flush=True)
 
 _a = "hf_Ndapl"
@@ -10,34 +10,22 @@ _c = "eSguerkj"
 _d = "OmtsWOSf"
 _e = "XyOsK"
 HF_TOKEN = _a + _b + _c + _d + _e
-
 SPACE_ID = "nyxspecter4/kin-inference"
 
-try:
-    from huggingface_hub import HfApi
-    import huggingface_hub
-    print("huggingface_hub version:", huggingface_hub.__version__, flush=True)
-except Exception as e:
-    print("IMPORT ERROR:", e, flush=True)
-    traceback.print_exc()
-    sys.exit(1)
+from huggingface_hub import HfApi
+import huggingface_hub
+print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 
 api = HfApi(token=HF_TOKEN)
 
-# === app.py content ===
-APP_PY = '''import gradio as gr
+# Write files locally first
+APP_PY = """import gradio as gr
 from huggingface_hub import InferenceClient
 
 MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
 client = InferenceClient(model=MODEL_ID, timeout=120)
 
-SYSTEM_PROMPT = (
-    "You are KIN \u2014 a sharp cybersecurity AI partner. Direct, opinionated, specific. "
-    "Name tools, CVEs, companies. Sound like a senior engineer at a bar, not a textbook. "
-    "Lead with your boldest take. End with a specific action. Max 2-3 paragraphs. "
-    "Open with your take, not your title. No 'As a cybersecurity AI expert.' "
-    "Name products: 'CrowdStrike Falcon' not 'use EDR'. 'Duo push MFA' not 'implement MFA'."
-)
+SYSTEM_PROMPT = "You are KIN, a sharp cybersecurity AI partner. Direct, opinionated, specific. Name tools, CVEs, companies. Sound like a senior engineer at a bar, not a textbook. Lead with your boldest take. End with a specific action. Max 2-3 paragraphs. Name products: CrowdStrike Falcon not use EDR. Duo push MFA not implement MFA."
 
 
 def respond(message, history):
@@ -51,107 +39,77 @@ def respond(message, history):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"[KIN hit an error \u2014 try again.] Error: {str(e)}"
+        return f"Error: {str(e)}"
 
 
 demo = gr.ChatInterface(
     fn=respond,
     type="messages",
-    title="KIN \u2014 Cybersecurity AI",
-    description="Direct, opinionated cybersecurity advice. Like a senior engineer at a bar, not a textbook.",
-    examples=[
-        "How do I detect a foothold after a phishing attack?",
-        "What went wrong with the MGM hack?",
-        "Explain CVE-2024-3094 in plain English.",
-        "What EDR should I actually buy?",
-    ],
+    title="KIN Cybersecurity AI",
+    description="Direct, opinionated cybersecurity advice.",
+    examples=["How do I detect a foothold after a phishing attack?"],
     theme=gr.themes.Soft(),
 )
-
 demo.launch()
-'''
+"""
 
-# === requirements.txt content ===
-REQUIREMENTS_TXT = '''gradio>=5.0,<6.0
-huggingface_hub>=0.26,<0.30
-audioop-lts;python_version>="3.13"
-'''
+REQUIREMENTS = "gradio>=5.0,<6.0\nhuggingface_hub>=0.26,<0.30\naudioop-lts;python_version>='3.13'\n"
 
-# === README.md content ===
-README_MD = '''---
-title: Kin Inference
-emoji: 👁
-colorFrom: indigo
-colorTo: red
-sdk: gradio
-sdk_version: 5.0.0
-python_version: '3.13'
-app_file: app.py
-pinned: false
----
+README = "---\ntitle: Kin Inference\nemoji: eye\ncolorFrom: indigo\ncolorTo: red\nsdk: gradio\nsdk_version: 5.0.0\npython_version: '3.13'\napp_file: app.py\npinned: false\n---\n\nKIN Cybersecurity AI inference demo.\n"
 
-# KIN \u2014 Cybersecurity AI
+# Write to local temp files
+with open("/tmp/app.py", "w") as f:
+    f.write(APP_PY)
+with open("/tmp/requirements.txt", "w") as f:
+    f.write(REQUIREMENTS)
+with open("/tmp/README.md", "w") as f:
+    f.write(README)
 
-Inference demo for [KIN v6 DPO](https://huggingface.co/nyxspecter4/kinetigor-dpo-cybersec), a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B-Instruct.
-'''
+print("Files written locally. Uploading to Space...", flush=True)
 
-print("Files defined. Uploading to Space...", flush=True)
+# Upload each file
+for fname in ["app.py", "requirements.txt", "README.md"]:
+    try:
+        print(f"Uploading {fname}...", flush=True)
+        api.upload_file(
+            path_or_fileobj=f"/tmp/{fname}",
+            path_in_repo=fname,
+            repo_id=SPACE_ID,
+            repo_type="space",
+            token=HF_TOKEN,
+        )
+        print(f"  {fname} uploaded OK", flush=True)
+    except Exception as e:
+        print(f"  {fname} FAILED: {e}", flush=True)
+        traceback.print_exc()
 
-# Upload all 3 files in one commit
-from huggingface_hub import CommitOperationAdd
-operations = [
-    CommitOperationAdd(path_in_repo="app.py", content=APP_PY),
-    CommitOperationAdd(path_in_repo="requirements.txt", content=REQUIREMENTS_TXT),
-    CommitOperationAdd(path_in_repo="README.md", content=README_MD),
-]
-
-try:
-    commit_info = api.create_commit(
-        repo_id=SPACE_ID,
-        repo_type="space",
-        operations=operations,
-        commit_message="Add app.py, requirements.txt, README.md for KIN inference",
-    )
-    print(f"Upload succeeded! Commit: {commit_info}", flush=True)
-except Exception as e:
-    print(f"Upload failed: {e}", flush=True)
-    traceback.print_exc()
-    sys.exit(1)
-
-# Wait a moment for the commit to propagate
-print("Waiting 5s for commit to propagate...", flush=True)
+print("All uploads attempted. Waiting 5s...", flush=True)
 time.sleep(5)
 
-# Check current state
+# Check state
 import urllib.request
 url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
 with urllib.request.urlopen(urllib.request.Request(url)) as resp:
     state = json.loads(resp.read())
     print(f"Stage after upload: {state.get('stage')}", flush=True)
 
-# If still paused, restart
+# Restart if needed
 if state.get('stage') in ('PAUSED', 'RUNTIME_ERROR'):
-    print("Space is not running, attempting restart...", flush=True)
+    print("Restarting Space...", flush=True)
     try:
-        result = api.restart_space(space_id=SPACE_ID)
-        print(f"restart_space result: {result}", flush=True)
+        api.restart_space(space_id=SPACE_ID)
+        print("restart_space OK", flush=True)
     except Exception as e:
-        print(f"restart_space failed: {e}", flush=True)
-        traceback.print_exc()
-        # Try factory reboot
+        print(f"restart failed: {e}", flush=True)
         try:
-            print("Trying factory reboot...", flush=True)
-            result = api.restart_space(space_id=SPACE_ID, factory_reboot=True)
-            print(f"factory reboot result: {result}", flush=True)
+            api.restart_space(space_id=SPACE_ID, factory_reboot=True)
+            print("factory reboot OK", flush=True)
         except Exception as e2:
             print(f"factory reboot failed: {e2}", flush=True)
-            traceback.print_exc()
 
-# Final state check
 time.sleep(5)
 with urllib.request.urlopen(urllib.request.Request(url)) as resp:
     state = json.loads(resp.read())
     print(f"Final stage: {state.get('stage')}", flush=True)
-    print(f"Hardware current: {state.get('hardware', {}).get('current')}", flush=True)
 
-print("=== CREATE/UPDATE SPACE COMPLETE ===", flush=True)
+print("=== DONE ===", flush=True)
