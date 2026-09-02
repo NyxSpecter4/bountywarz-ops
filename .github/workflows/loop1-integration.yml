@@ -16,9 +16,10 @@ jobs:
       - name: Find challenge pack
         id: find-pack
         run: |
-          LATEST=$(ls -td kin-deploy/challenge-packs/*/ | head -1 | xargs dirname)
+          LATEST=$(ls -d kin-deploy/challenge-packs/*/ | tail -1)
           NAME=$(basename "$LATEST")
           echo "pack=$NAME" >> $GITHUB_OUTPUT
+          echo "pack_path=$LATEST" >> $GITHUB_OUTPUT
       - name: Get next Sport number
         id: sport-num
         run: |
@@ -33,5 +34,7 @@ jobs:
           DIR="arena-results/$(date +%Y%m%d-%H%M%S)/${{ steps.find-pack.outputs.pack }}"
           mkdir -p "$DIR"
           echo '{"pack":"${{ steps.find-pack.outputs.pack }}"}' > "$DIR/metadata.json"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
           git add . && git commit -m "Loop 1 results" || true
           git push || true
