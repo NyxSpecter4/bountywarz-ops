@@ -1,0 +1,29 @@
+{
+  "test": [
+    {
+      "id": "eval-001",
+      "category": "MITRE ATT&CK",
+      "prompt": "Identify the MITRE ATT&CK technique for a PowerShell script that downloads and executes a payload from a remote server.",
+      "expected_output": "T1059.001 (Command and Scripting Interpreter: PowerShell)",
+      "difficulty": "medium",
+      "tags": [
+        "T1059",
+        "execution",
+        "powershell"
+      ]
+    },
+    {
+      "id": "eval-002",
+      "category": "OWASP Top 10",
+      "prompt": "What is the most critical OWASP Top 10 vulnerability for a REST API that handles user authentication?",
+      "expected_output": "A07:2021 - Identification and Authentication Failures",
+      "difficulty": "medium",
+      "tags": [
+        "OWASP",
+        "API",
+        "authentication"
+      ]
+    }
+  ],
+  "validation": []
+}
