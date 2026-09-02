@@ -61,7 +61,8 @@ os.unlink(p)
 print("requirements.txt uploaded", flush=True)
 
 # Upload README
-README = "---\ntitle: KIN Cybersecurity AI\nemoji: \U0001f6e1\ncolorFrom: gray\ncolorTo: blue\nsdk: gradio\nsdk_version: 4.44.0\napp_file: app.py\npinned: true\ntags:\n  - cybersecurity\n  - security\n  - threat-intelligence\n  - penetration-testing\nmodels:\n  - " + MODEL_ID + "\n---\n\n# KIN - Cybersecurity AI (v6 DPO)\n\nChat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.\n"
+README = "---\ntitle: KIN Cybersecurity AI\nemoji: \U0001f6e1\ncolorFrom: gray\ncolorTo: blue\nsdk: gradi
+o\nsdk_version: 4.44.0\napp_file: app.py\npinned: true\ntags:\n  - cybersecurity\n  - security\n  - threat-intelligence\n  - penetration-testing\nmodels:\n  - " + MODEL_ID + "\n---\n\n# KIN - Cybersecurity AI (v6 DPO)\n\nChat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.\n\nBuild: 2026-09-02T01:47:31.829Z\n"
 print("Uploading README...", flush=True)
 with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
     f.write(README)
