@@ -1,0 +1,45 @@
+name: Loop 1 - Challenge Pack to Cockpit to Arena
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'kin-deploy/challenge-packs/**'
+
+jobs:
+  integrate-and-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Find challenge pack
+        id: find-pack
+        run: |
+          LATEST=$(ls -td kin-deploy/challenge-packs/*/ | head -1 | xargs dirname)
+          NAME=$(basename "$LATEST")
+          echo "pack=$NAME" >> $GITHUB_OUTPUT
+      
+      - name: Get next Sport number
+        id: sport-num
+        run: |
+          COUNT=$(grep -c "Sport #" arena/kinetigor-cockpit.js || echo 0)
+          NEXT=$((COUNT + 1))
+          echo "sport=$NEXT" >> $GITHUB_OUTPUT
+      
+      - name: Log integration
+        run: |
+          echo "Loop 1: Integrating ${{ steps.find-pack.outputs.pack }} as Sport #${{ steps.sport-num.outputs.sport }}"
+      
+      - name: Save metadata
+        run: |
+          DIR="arena-results/$(date +%Y%m%d-%H%M%S)/${{ steps.find-pack.outputs.pack }}"
+          mkdir -p "$DIR"
+          echo '{"pack":"${{ steps.find-pack.outputs.pack }}","sport":${{ steps.sport-num.outputs.sport }}}' > "$DIR/metadata.json"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add . && git commit -m "Loop 1: ${{ steps.find-pack.outputs.pack }}" || true
+          git push || true
