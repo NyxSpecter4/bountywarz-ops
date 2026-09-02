@@ -23,7 +23,14 @@ jobs:
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake build-essential
       - name: Install huggingface_hub
-        run: pip install huggingface_hub
+        run: pip install "huggingface_hub>=0.26,<0.30"
+      - name: Debug imports
+        run: |
+          python -c "import sys; print('Python:', sys.version)"
+          python -c "import huggingface_hub; print('hub version:', huggingface_hub.__version__)"
+          python -c "from huggingface_hub import HfApi; print('HfApi OK')"
+          python -c "from huggingface_hub import snapshot_download; print('snapshot_download OK')" || echo "snapshot_download FAILED"
+          python -c "from huggingface_hub import create_repo; print('create_repo OK')" || echo "create_repo NOT available as top-level import"
       - name: Convert and upload GGUF
-        run: python kin-gguf/convert_gguf.py
+        run: python kin-gguf/convert_gguf.py 2>&1
         timeout-minutes: 40
