@@ -1,23 +1,12 @@
-=== MINIMAL SPACE ===
+=== FIX SPACE v3 (gradio 5.44.0 pin) ===
 huggingface_hub: 0.29.3
+Downloading app.py from GitHub...
+  app.py size: 1572 bytes
+  requirements.txt written
+  README.md written
 Deleting old Space...
   Deleted OK
 Creating new Space...
-  Created OK!
-Uploading app.py only...
-  app.py uploaded OK
-Waiting for build...
-  Check 1: APP_STARTING
-  Check 2: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
-  File "/app/app.py", line 30, in <module>
-    demo = gr.ChatInterface(
-        fn=respond,
-    ...<9 lines>...
-        theme=gr.themes.Soft(),
-  ERROR: Exit code: 1. Reason: Traceback (most recent call last):
-  File "/app/app.py", line 30, in <module>
-    demo = gr.ChatInterface(
-        fn=respond,
-    ...<9 lines>...
-        theme=gr.themes.Soft(),
-=== DONE ===
+  Create FAILED: HfHubHTTPError: 409 Client Error: Conflict for url: https://huggingface.co/api/repos/create (Request ID: Root=1-6a984544-2c91058b6c71b67c76ac03c2;bf5fa88b-847c-4c1a-b02d-f8dd02a0e1fa)
+
+You already created this space repo: nyxspecter4/kin-inference
