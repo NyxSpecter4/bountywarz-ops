@@ -1,0 +1,12 @@
+{
+  "model": "thinkingmachines/Inkling",
+  "total_tests": 25,
+  "passed": 24,
+  "failed": 1,
+  "failure_rate": "1/25",
+  "categories_tested": 16,
+  "timestamp": "2026-09-02T01:25:07Z",
+  "failure_cases": [
+    "CVE-003"
+  ]
+}
