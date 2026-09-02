@@ -1,2 +1,1 @@
-Retrigger with audioop-lts fix: 2026-09-02T01:41:49.556Z
-Space audioop-lts fix retrigger.
+Retrigger #4 with correct script + audioop-lts: 2026-09-02T01:42:37.841Z
