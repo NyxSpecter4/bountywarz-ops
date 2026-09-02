@@ -1,51 +1,8 @@
-=== FIX SPACE ===
+=== FIX SPACE V3 ===
 huggingface_hub: 0.29.3
-User: nyxspecter4
 Uploading via create_commit...
-  create_commit FAILED: ValueError: Invalid metadata in README.md.
-- "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 409, in hf_raise_for_status
-    response.raise_for_status()
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/requests/models.py", line 1167, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://huggingface.co/api/validate-yaml
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 9250, in _validate_yaml
-    hf_raise_for_status(response)
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 464, in hf_raise_for_status
-    raise _format(BadRequestError, message, response) from e
-huggingface_hub.errors.BadRequestError: (Request ID: Root=1-6a983d24-3119b81d4d5ee7c651d94231;55777ca0-de78-42d1-890b-6f858b5cfdc6)
-
-Bad request:
-"emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/runner/work/bountywarz-ops/bountywarz-ops/kin-spaces/fix_space.py", line 50, in <module>
-    commit_info = api.create_commit(
-                  ^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 1551, in _inner
-    return fn(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 3984, in create_commit
-    self._validate_yaml(content, repo_type=repo_type, token=token)
-  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 9254, in _validate_yaml
-    raise ValueError(f"Invalid metadata in README.md.\n{message}") from e
-ValueError: Invalid metadata in README.md.
-- "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-No files have been modified since last commit. Skipping to prevent empty commit.
-  requirements.txt upload_file OK
-  README.md upload_file FAILED: ValueError: Invalid metadata in README.md.
-- "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
-Stage after upload: BUILD_ERROR
+  create_commit OK: https://huggingface.co/spaces/nyxspecter4/kin-inference/commit/7ff41d69a39a83c057efdf2f4cf2178d7fd00e42
+Stage after upload: BUILDING
 Factory reboot...
   Reboot OK
   Check 1: BUILDING
@@ -53,7 +10,15 @@ Factory reboot...
   Check 3: BUILDING
   Check 4: BUILDING
   Check 5: BUILDING
-  Check 6: BUILD_ERROR
-  Check 7: BUILD_ERROR
-  Check 8: BUILD_ERROR
+  Check 6: BUILDING
+  Check 7: APP_STARTING
+  Check 8: RUNTIME_ERROR
+  RUNTIME_ERROR: Exit code: 1. Reason: Traceback (most recent call last):
+  File "/app/app.py", line 1, in <module>
+    import gradio as gr
+  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, in <module>
+    import gradio._simple_templates
+  File "/usr/local/lib/python3.13/site-packages/gradio/_simple_templates/__init__.py", line 1, in <module>
+    from .simpledropdown import SimpleDropdown
+  File "/usr/local/lib/python3.13/site-packages/gradio/_simple_templates/simpledropdown.py", line 
 === DONE ===
