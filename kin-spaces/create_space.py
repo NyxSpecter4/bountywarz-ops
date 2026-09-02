@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/update the KIN inference Space — InferenceClient + gradio 5 (no torch)."""
+"""Create/update the KIN inference Space — delete + recreate for fresh build."""
 print("=== CREATE SPACE START ===", flush=True)
 import sys, os, time, tempfile, traceback, datetime
 print("Python:", sys.version, flush=True)
@@ -41,17 +41,25 @@ try:
 except Exception as e:
     print(f"WARN: could not set model public: {e}", flush=True)
 
-print("Creating Space...", flush=True)
+print("Deleting existing Space for fresh rebuild...", flush=True)
+try:
+    api.delete_repo(repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
+    print("Space deleted", flush=True)
+    time.sleep(5)
+except Exception as e:
+    print(f"WARN: could not delete space (might not exist): {e}", flush=True)
+
+print("Creating fresh Space...", flush=True)
 for attempt in range(1, 4):
     try:
         api.create_repo(repo_id=SPACE_ID, repo_type="space", private=False,
                     token=HF_TOKEN, exist_ok=True, space_sdk="gradio")
-        print("Space created/exists", flush=True)
+        print("Space created", flush=True)
         break
     except Exception as e:
         print(f"Create attempt {attempt} error: {e}", flush=True)
         if attempt < 3:
-            time.sleep(5)
+            time.sleep(10)
 
 REQS = """gradio>=5.0,<6.0
 huggingface_hub>=0.26
@@ -104,16 +112,5 @@ print("Uploading app.py...", flush=True)
 api.upload_file(path_or_fileobj="kin-spaces/app.py", path_in_repo="app.py",
     repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
 print("app.py uploaded", flush=True)
-
-print("Factory rebooting Space to force full rebuild...", flush=True)
-for attempt in range(1, 4):
-    try:
-        api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
-        print("Space factory rebooted!", flush=True)
-        break
-    except Exception as e:
-        print(f"Reboot attempt {attempt} error: {e}", flush=True)
-        if attempt < 3:
-            time.sleep(5)
 
 print("=== SPACE UPDATE COMPLETE ===", flush=True)
