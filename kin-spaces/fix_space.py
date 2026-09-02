@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Fix Space v4: upload files to existing Space (no delete/create)."""
+"""Fix Space v5: force rebuild with trivial change + gradio 5.44.0 pin."""
 import sys, os, time, json, urllib.request, traceback
-print("=== FIX SPACE v4 (update existing, gradio 5.44.0) ===", flush=True)
+print("=== FIX SPACE v5 (force rebuild) ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -23,17 +23,16 @@ urllib.request.urlretrieve(
     "/tmp/app.py"
 )
 with open("/tmp/app.py") as f:
-    content = f.read()
-    print("  app.py size:", len(content), "bytes", flush=True)
+    print("  app.py size:", len(f.read()), "bytes", flush=True)
 
-# Write requirements.txt - gradio 5.44.0 pinned via README sdk_version
-# huggingface_hub for InferenceClient, audioop-lts for Python 3.13 pydub compat
-REQS = "huggingface_hub>=0.26.0\naudioop-lts\n"
+# Write requirements.txt with a unique comment to force rebuild
+ts = str(int(time.time()))
+REQS = "# KIN Space requirements (build " + ts + ")\nhuggingface_hub>=0.26.0\naudioop-lts\n"
 with open("/tmp/requirements.txt", "w") as f:
     f.write(REQS)
-print("  requirements.txt written", flush=True)
+print("  requirements.txt written (with unique comment)", flush=True)
 
-# Write README.md with sdk_version 5.44.0 (not 6.x)
+# Write README.md with sdk_version 5.44.0
 README_CONTENT = (
     "---\n"
     "title: KIN Cybersecurity AI\n"
@@ -52,7 +51,7 @@ with open("/tmp/README.md", "w") as f:
     f.write(README_CONTENT)
 print("  README.md written (sdk_version: 5.44.0)", flush=True)
 
-# Try to create the Space if it doesn't exist, otherwise just upload
+# Ensure Space exists
 print("Ensuring Space exists...", flush=True)
 try:
     api.create_repo(
@@ -69,17 +68,16 @@ except Exception as e:
     if "409" in err_str or "already" in err_str.lower():
         print("  Space already exists (OK)", flush=True)
     else:
-        print(f"  Create error: {type(e).__name__}: {err_str[:200]}", flush=True)
-        # Continue anyway - try to upload
+        print(f"  Create note: {type(e).__name__}: {err_str[:200]}", flush=True)
 
-# Upload ALL files in one commit (overwrites existing)
+# Upload ALL files in one commit (the unique comment forces a rebuild)
 print("Uploading app.py + requirements.txt + README.md...", flush=True)
 try:
     api.create_commit(
         repo_id=SPACE_ID,
         repo_type="space",
         token=HF_TOKEN,
-        commit_message="Fix: pin gradio 5.44.0, add requirements.txt",
+        commit_message="Fix: pin gradio 5.44.0, force rebuild",
         operations=[
             CommitOperationAdd(path_in_repo="app.py", path_or_fileobj="/tmp/app.py"),
             CommitOperationAdd(path_in_repo="requirements.txt", path_or_fileobj="/tmp/requirements.txt"),
