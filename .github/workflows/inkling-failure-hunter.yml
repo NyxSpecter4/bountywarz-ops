@@ -5,6 +5,9 @@ on:
       - "inkling-hunt*"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   hunt:
     runs-on: ubuntu-latest
@@ -14,8 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install --no-cache-dir tinker transformers
+      - run: pip install --no-cache-dir openai
       - run: python kin-inkling/failure_hunter.py
         env:
           TINKER_API_KEY: tml-JyTGXaKG7cCYkXS4EuUZZzeM36a46pZGrfSWoj3ENJYeZAoPFmMo5CsaOUvKwuXxDAAAA
