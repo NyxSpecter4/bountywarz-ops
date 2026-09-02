@@ -1,2 +1,1 @@
-Retrigger with debug step: 2026-09-02T01:40:59.044Z
-Debug retrigger.
+Syntax check retrigger: 2026-09-02T01:43:46.713Z
