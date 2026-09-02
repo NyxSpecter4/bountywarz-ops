@@ -1,0 +1,23 @@
+{
+  "program": {
+    "name": "Loop1-Test-v4",
+    "handle": "loop1-test-v4",
+    "url": "https://example.com",
+    "max_payout": 30000
+  },
+  "challenges": [
+    {
+      "id": "vuln-001",
+      "type": "vulnerability_identification",
+      "difficulty": "medium",
+      "description": "Identify the most critical vulnerability",
+      "expected_output": "CVE-ID",
+      "points": 10
+    }
+  ],
+  "metadata": {
+    "generated_by": "manual-test-v4",
+    "generated_at": "2026-09-02T17:53:05.982Z",
+    "loop_version": "1.0"
+  }
+}
