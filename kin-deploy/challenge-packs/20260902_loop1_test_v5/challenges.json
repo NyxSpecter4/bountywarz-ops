@@ -1,0 +1,36 @@
+{
+  "challenges": [
+    {
+      "id": "vuln-001",
+      "type": "vulnerability_identification",
+      "difficulty": "medium",
+      "description": "Identify the most critical vulnerability in TestCorp v5 scope",
+      "expected_output": "CVE-ID or vulnerability description",
+      "points": 10
+    },
+    {
+      "id": "exploit-001",
+      "type": "exploit_analysis",
+      "difficulty": "hard",
+      "description": "Describe a potential exploit chain for TestCorp v5",
+      "expected_output": "Step-by-step exploit scenario",
+      "points": 15
+    },
+    {
+      "id": "defense-001",
+      "type": "defensive_strategy",
+      "difficulty": "medium",
+      "description": "Recommend defensive measures for TestCorp v5",
+      "expected_output": "List of security controls",
+      "points": 10
+    },
+    {
+      "id": "threat-001",
+      "type": "threat_modeling",
+      "difficulty": "hard",
+      "description": "Build a threat model for TestCorp v5",
+      "expected_output": "Threat model with STRIDE categories",
+      "points": 20
+    }
+  ]
+}

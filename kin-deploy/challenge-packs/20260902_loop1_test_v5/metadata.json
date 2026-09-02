@@ -1,0 +1,13 @@
+{
+  "program": {
+    "name": "TestCorp v5 Security Program",
+    "handle": "testcorp_v5",
+    "url": "https://hackerone.com/testcorp_v5",
+    "max_payout": 15000,
+    "max_payout_currency": "USD",
+    "description": "Test program for Loop 1 validation v5"
+  },
+  "generated_by": "bounty-drop-detector",
+  "generated_at": "2026-09-02T18:07:49.363Z",
+  "loop_version": "1.0"
+}
