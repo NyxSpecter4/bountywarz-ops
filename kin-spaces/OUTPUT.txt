@@ -1,15 +1,56 @@
-=== CREATE SPACE ===
+=== FIX SPACE ===
 huggingface_hub: 0.29.3
-Token valid, user: nyxspecter4
-Downloading app.py...
-Creating nyxspecter4/kin-inference via create_repo...
-  Created OK!
-Uploading app.py...
-  app.py OK
-Uploading requirements.txt...
-  requirements.txt OK
-Uploading README.md...
-  README.md FAILED: ValueError: Invalid metadata in README.md.
+Uploading via create_commit...
+  create_commit FAILED: ValueError: Invalid metadata in README.md.
+- "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 409, in hf_raise_for_status
+    response.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://huggingface.co/api/validate-yaml
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 9250, in _validate_yaml
+    hf_raise_for_status(response)
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_http.py", line 464, in hf_raise_for_status
+    raise _format(BadRequestError, message, response) from e
+huggingface_hub.errors.BadRequestError: (Request ID: Root=1-6a983c2c-66e59f582a6bf55a71d43e66;961ef6e3-a341-4330-a9ba-03e891cfd792)
+
+Bad request:
+"emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/runner/work/bountywarz-ops/bountywarz-ops/kin-spaces/create_space.py", line 46, in <module>
+    commit_info = api.create_commit(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 1551, in _inner
+    return fn(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 3984, in create_commit
+    self._validate_yaml(content, repo_type=repo_type, token=token)
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/huggingface_hub/hf_api.py", line 9254, in _validate_yaml
+    raise ValueError(f"Invalid metadata in README.md.\n{message}") from e
+ValueError: Invalid metadata in README.md.
+- "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
+  Falling back to upload_file...
+  requirements.txt upload OK
+  README.md upload FAILED: ValueError: Invalid metadata in README.md.
 - "emoji" with value "KIN" fails to match the required pattern: /\p{Extended_Pictographic}/u
 Stage: BUILDING
+Restarting Space...
+  Restart OK
+  Check 1: BUILDING
+  Check 2: BUILDING
+  Check 3: BUILDING
+  Check 4: BUILDING
+  Check 5: BUILD_ERROR
+  Check 6: BUILD_ERROR
 === DONE ===
