@@ -22,7 +22,7 @@ print("HfApi initialized", flush=True)
 print("Validating token...", flush=True)
 try:
     info = api.whoami()
-    print(f"Token valid! Account: {info.get(chr(39)+chr(110)+chr(97)+chr(109)+chr(101)+chr(39), chr(117)+chr(110)+chr(107))}", flush=True)
+    print("Token valid! Name:", info.get("name", "unknown"), flush=True)
 except Exception as e:
     print(f"TOKEN INVALID: {e}", flush=True)
     import traceback; traceback.print_exc()
@@ -54,7 +54,8 @@ def run_capture(cmd):
     return r.returncode, r.stdout, r.stderr
 
 def df():
-    subprocess.run(["df", "-h", "/"], check=False)
+    subprocess.run(["df", "-h
+", "/"], check=False)
 
 try:
     print("=" * 60)
@@ -102,7 +103,8 @@ _progress("Step 0b: Installing torch + numpy + safetensors (early)...")
         print(f"  {f} ({sz})")
     df()
 
-    # 1b. Check for .base_layer. in safetensors (skip if no index — single file is already merged)
+    # 1b. Check for .base_layer. in safetensors (skip if no index — single fil
+e is already merged)
     write_progress("Step 1b: Checking tensor names for PEFT artifacts...")
     index_path = os.path.join(model_dir, "model.safetensors.index.json")
     needs_patch = False
@@ -143,7 +145,8 @@ _progress("Step 0b: Installing torch + numpy + safetensors (early)...")
             lora_keys = [k for k in list(tensors.keys()) if ".lora_A." in k or ".lora_B." in k or "lora_embedding" in k]
             for k in lora_keys:
                 del tensors[k]
-            print(f"  Renamed {len(keys_to_rename)} tensors, removed {len(lora_keys)} LoRA tensors")
+     
+       print(f"  Renamed {len(keys_to_rename)} tensors, removed {len(lora_keys)} LoRA tensors")
             save_file(tensors, shard_path, metadata={"format": "pt"})
             del tensors
             print(f"  Saved {shard}")
@@ -195,7 +198,8 @@ _progress("Step 0b: Installing torch + numpy + safetensors (early)...")
             sys.exit(1)
     print(f"convert script: {CONVERT}")
 
-    # 4. Install remaining deps
+    # 4. Install rem
+aining deps
     write_progress("Step 4: Installing remaining deps...")
     run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
     req = "llama.cpp/requirements/requirements-convert_hf_to_gguf.txt"
@@ -243,7 +247,8 @@ _progress("Step 0b: Installing torch + numpy + safetensors (early)...")
          "kinetigor-v6-q4_k_m.gguf", "Q4_K_M"])
     if rc != 0:
         write_progress(f"FAILED at step 7 (quantize Q4_K_M):\nSTDOUT:\n{out[-3000:]}\nSTDERR:\n{err[-3000:]}")
-        sys.exit(1)
+        sys.e
+xit(1)
     df()
 
     # 7b. Free F16
