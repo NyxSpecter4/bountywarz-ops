@@ -1,24 +1,24 @@
-=== RECREATE SPACE V2 ===
+=== MINIMAL SPACE ===
 huggingface_hub: 0.29.3
-Downloading app.py...
 Deleting old Space...
   Deleted OK
-Creating new Space via create_repo...
+Creating new Space...
   Created OK!
-Uploading files via create_commit...
-  Upload OK: https://huggingface.co/spaces/nyxspecter4/kin-inference/commit/1348ea5755e24987053c025280ab24a51d6469be
+Uploading app.py only...
+  app.py uploaded OK
 Waiting for build...
   Check 1: APP_STARTING
-  Check 2: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
-  File "/app/app.py", line 1, in <module>
-    import gradio as gr
-  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, in <module>
-    import gradio._simple_templates
-  File "/usr/local/lib/python3.13/site-packages/grad
-  RUNTIME_ERROR: Exit code: 1. Reason: Traceback (most recent call last):
-  File "/app/app.py", line 1, in <module>
-    import gradio as gr
-  File "/usr/local/lib/python3.13/site-packages/gradio/__init__.py", line 3, in <module>
-    import gradio._simple_templates
-  File "/usr/local/lib/python3.13/site-packages/grad
+  Check 2: APP_STARTING
+  Check 3: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
+  File "/app/app.py", line 30, in <module>
+    demo = gr.ChatInterface(
+        fn=respond,
+    ...<9 lines>...
+        theme=gr.themes.Soft(),
+  ERROR: Exit code: 1. Reason: Traceback (most recent call last):
+  File "/app/app.py", line 30, in <module>
+    demo = gr.ChatInterface(
+        fn=respond,
+    ...<9 lines>...
+        theme=gr.themes.Soft(),
 === DONE ===
