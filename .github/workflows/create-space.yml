@@ -3,7 +3,7 @@ name: Create Space
 on:
   push:
     branches: [main]
-    paths: ['kin-spaces/create_space.py']
+    paths: ['kin-spaces/create_space.py', 'kin-spaces/fix_space.py']
   pull_request_target:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -26,15 +26,20 @@ jobs:
           python-version: '3.11'
       - name: Install deps
         run: pip install "huggingface_hub>=0.26,<0.30"
-      - name: Syntax check
-        run: python -m py_compile kin-spaces/create_space.py
-      - name: Create Space
-        run: python kin-spaces/create_space.py 2>&1 | tee kin-spaces/OUTPUT.txt
+      - name: Run fix script
+        run: |
+          if [ -f kin-spaces/fix_space.py ]; then
+            python -m py_compile kin-spaces/fix_space.py
+            python kin-spaces/fix_space.py 2>&1 | tee kin-spaces/OUTPUT.txt
+          else
+            python -m py_compile kin-spaces/create_space.py
+            python kin-spaces/create_space.py 2>&1 | tee kin-spaces/OUTPUT.txt
+          fi
       - name: Commit output
         if: always()
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add kin-spaces/OUTPUT.txt || true
-          git commit -m "chore: capture Space creation output [skip ci]" || true
+          git commit -m "chore: capture output [skip ci]" || true
           git push || true
