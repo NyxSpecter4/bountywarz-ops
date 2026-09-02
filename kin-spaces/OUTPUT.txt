@@ -8,8 +8,7 @@ Uploading app.py only...
   app.py uploaded OK
 Waiting for build...
   Check 1: APP_STARTING
-  Check 2: APP_STARTING
-  Check 3: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
+  Check 2: RUNTIME_ERROR err=Exit code: 1. Reason: Traceback (most recent call last):
   File "/app/app.py", line 30, in <module>
     demo = gr.ChatInterface(
         fn=respond,
