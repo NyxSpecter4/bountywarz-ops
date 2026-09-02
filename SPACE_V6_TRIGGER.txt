@@ -1,0 +1,3 @@
+Repoint Space to v6 weights
+Model: nyxspecter4/kinetigor-dpo-cybersec
+safetensors: 1.88GB Qwen2.5-0.5B + LoRA r=64 DPO
