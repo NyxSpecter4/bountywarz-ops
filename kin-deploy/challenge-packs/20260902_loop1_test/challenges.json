@@ -1,0 +1,33 @@
+{
+  "program": {
+    "name": "Loop1-Test-Program",
+    "handle": "loop1-test",
+    "url": "https://example.com",
+    "max_payout": 15000,
+    "max_payout_currency": "USD",
+    "detected_at": "2026-09-02T17:49:28.663Z"
+  },
+  "challenges": [
+    {
+      "id": "vuln-001",
+      "type": "vulnerability_identification",
+      "difficulty": "medium",
+      "description": "Identify the most critical vulnerability",
+      "expected_output": "CVE-ID or vulnerability description",
+      "points": 10
+    },
+    {
+      "id": "exploit-001",
+      "type": "exploit_analysis",
+      "difficulty": "hard",
+      "description": "Describe a potential exploit chain",
+      "expected_output": "Step-by-step exploit scenario",
+      "points": 15
+    }
+  ],
+  "metadata": {
+    "generated_by": "manual-test",
+    "generated_at": "2026-09-02T17:49:28.663Z",
+    "loop_version": "1.0"
+  }
+}
