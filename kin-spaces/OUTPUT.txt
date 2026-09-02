@@ -1,15 +1,17 @@
-=== FIX SPACE v4 (update existing, gradio 5.44.0) ===
+=== FIX SPACE v5 (force rebuild) ===
 huggingface_hub: 0.29.3
 Downloading app.py from GitHub...
   app.py size: 1572 bytes
-  requirements.txt written
+  requirements.txt written (with unique comment)
   README.md written (sdk_version: 5.44.0)
 Ensuring Space exists...
   Space already exists (OK)
 Uploading app.py + requirements.txt + README.md...
-No files have been modified since last commit. Skipping to prevent empty commit.
   All files uploaded OK
 Waiting for build (up to 5 min)...
-  Check 1: RUNNING
+  Check 1: RUNNING_BUILDING
+  Check 2: RUNNING_BUILDING
+  Check 3: RUNNING_APP_STARTING
+  Check 4: RUNNING
   SPACE IS RUNNING!
 === DONE ===
