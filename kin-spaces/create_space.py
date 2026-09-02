@@ -105,4 +105,17 @@ api.upload_file(path_or_fileobj="kin-spaces/app.py", path_in_repo="app.py",
     repo_id=SPACE_ID, repo_type="space", token=HF_TOKEN)
 print("app.py uploaded", flush=True)
 
+print("Restarting Space to trigger rebuild...", flush=True)
+try:
+    api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN)
+    print("Space restarted", flush=True)
+except Exception as e:
+    print(f"WARN: could not restart space: {e}", flush=True)
+    # Try factory reboot as fallback
+    try:
+        api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
+        print("Space factory rebooted", flush=True)
+    except Exception as e2:
+        print(f"WARN: could not factory reboot: {e2}", flush=True)
+
 print("=== SPACE UPDATE COMPLETE ===", flush=True)
