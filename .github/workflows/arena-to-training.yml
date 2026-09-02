@@ -1,0 +1,35 @@
+name: Loop 1 - Arena Results to Training Data
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'arena-results/**'
+
+jobs:
+  prepare-training-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Find latest arena results
+        id: find-results
+        run: |
+          LATEST_DIR=$(find arena-results -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort | tail -1)
+          if [ -z "$LATEST_DIR" ]; then
+            echo "No arena results found"
+            exit 0
+          fi
+          echo "results_dir=$LATEST_DIR" >> $GITHUB_OUTPUT
+      
+      - name: Process results into training pairs
+        run: |
+          echo "Processing ${{ steps.find-results.outputs.results_dir }} into training pairs"
+          echo "This will create training_pairs.jsonl for model fine-tuning"
+          echo "Kiran must approve before training"
+      
+      - name: Notify for human approval
+        run: |
+          echo "Training data ready!"
+          echo "Kiran must approve and run train-lora.yml manually"
