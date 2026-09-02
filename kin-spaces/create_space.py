@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Create KIN Space using create_repo (not create_space)."""
+"""Fix Space: update README + requirements, restart."""
 import sys, os, time, traceback, json, urllib.request
-print("=== CREATE SPACE ===", flush=True)
+print("=== FIX SPACE ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -9,30 +9,19 @@ _c = "eSguerkj"
 _d = "OmtsWOSf"
 _e = "XyOsK"
 HF_TOKEN = _a + _b + _c + _d + _e
+SPACE_ID = "nyxspecter4/kin-inference"
 
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, CommitOperationAdd
 import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
 
-# Verify token
-who = api.whoami()
-print(f"Token valid, user: {who.get('name', 'unknown')}", flush=True)
-
-# Download app.py from GitHub
-print("Downloading app.py...", flush=True)
-urllib.request.urlretrieve(
-    "https://raw.githubusercontent.com/NyxSpecter4/bountywarz-ops/main/kin-spaces/app.py",
-    "/tmp/app.py"
-)
-
-# Write requirements.txt
+# Write new requirements.txt (no gradio pin - build system installs it from README sdk_version)
 with open("/tmp/requirements.txt", "w") as f:
-    f.write("gradio>=5.0,<6.0\n")
     f.write("huggingface_hub>=0.26,<0.30\n")
     f.write("audioop-lts;python_version>='3.13'\n")
 
-# Write README.md
+# Write new README.md with sdk_version 5.0.0
 with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("title: Kin Inference\n")
@@ -47,47 +36,73 @@ with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("KIN Cybersecurity AI inference demo.\n")
 
-# Create Space using create_repo with repo_type="space"
-SPACE_ID = "nyxspecter4/kin-inference"
-print(f"Creating {SPACE_ID} via create_repo...", flush=True)
+# Try uploading via create_commit (atomic)
+print("Uploading via create_commit...", flush=True)
 try:
-    api.create_repo(
+    operations = [
+        CommitOperationAdd(path_in_repo="requirements.txt", path_or_fileobj="/tmp/requirements.txt"),
+        CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="/tmp/README.md"),
+    ]
+    commit_info = api.create_commit(
         repo_id=SPACE_ID,
         repo_type="space",
-        private=False,
+        operations=operations,
+        commit_message="Fix requirements + README sdk_version",
         token=HF_TOKEN,
-        space_sdk="gradio",
     )
-    print("  Created OK!", flush=True)
+    print(f"  create_commit OK: {commit_info}", flush=True)
 except Exception as e:
-    print(f"  Create failed: {type(e).__name__}: {e}", flush=True)
-    # Maybe already exists, try uploading anyway
+    print(f"  create_commit FAILED: {type(e).__name__}: {e}", flush=True)
+    traceback.print_exc()
+    # Fallback: upload individually
+    print("  Falling back to upload_file...", flush=True)
+    for fname in ["requirements.txt", "README.md"]:
+        try:
+            api.upload_file(
+                path_or_fileobj=f"/tmp/{fname}",
+                path_in_repo=fname,
+                repo_id=SPACE_ID,
+                repo_type="space",
+                token=HF_TOKEN,
+            )
+            print(f"  {fname} upload OK", flush=True)
+        except Exception as e2:
+            print(f"  {fname} upload FAILED: {type(e2).__name__}: {e2}", flush=True)
 
-time.sleep(5)
-
-# Upload files
-for fname in ["app.py", "requirements.txt", "README.md"]:
-    print(f"Uploading {fname}...", flush=True)
-    try:
-        api.upload_file(
-            path_or_fileobj=f"/tmp/{fname}",
-            path_in_repo=fname,
-            repo_id=SPACE_ID,
-            repo_type="space",
-            token=HF_TOKEN,
-        )
-        print(f"  {fname} OK", flush=True)
-    except Exception as e:
-        print(f"  {fname} FAILED: {type(e).__name__}: {e}", flush=True)
-
-# Status check
+# Wait and check
 time.sleep(15)
 try:
     url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
     with urllib.request.urlopen(urllib.request.Request(url)) as resp:
         state = json.loads(resp.read())
         print(f"Stage: {state.get('stage')}", flush=True)
+        if state.get('errorMessage'):
+            print(f"Error: {state.get('errorMessage')[:500]}", flush=True)
 except Exception as e:
-    print(f"Status: {e}", flush=True)
+    print(f"Status check: {e}", flush=True)
+
+# Restart the Space
+print("Restarting Space...", flush=True)
+try:
+    api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
+    print("  Restart OK", flush=True)
+except Exception as e:
+    print(f"  Restart FAILED: {type(e).__name__}: {e}", flush=True)
+
+# Wait for build
+for i in range(6):
+    time.sleep(15)
+    try:
+        url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
+        with urllib.request.urlopen(urllib.request.Request(url)) as resp:
+            state = json.loads(resp.read())
+            stage = state.get("stage")
+            print(f"  Check {i+1}: {stage}", flush=True)
+            if stage in ("RUNNING", "RUNTIME_ERROR"):
+                if stage == "RUNTIME_ERROR" and state.get("errorMessage"):
+                    print(f"  Error: {state.get('errorMessage')[:500]}", flush=True)
+                break
+    except Exception as e:
+        print(f"  Check {i+1}: {e}", flush=True)
 
 print("=== DONE ===", flush=True)
