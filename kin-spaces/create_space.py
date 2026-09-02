@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create KIN Space and report errors clearly."""
+"""Create KIN Space using create_repo (not create_space)."""
 import sys, os, time, traceback, json, urllib.request
 print("=== CREATE SPACE ===", flush=True)
 
@@ -15,12 +15,9 @@ import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
 api = HfApi(token=HF_TOKEN)
 
-# Verify token works
-try:
-    who = api.whoami()
-    print(f"Token valid, user: {who.get('name', 'unknown')}", flush=True)
-except Exception as e:
-    print(f"Token check FAILED: {e}", flush=True)
+# Verify token
+who = api.whoami()
+print(f"Token valid, user: {who.get('name', 'unknown')}", flush=True)
 
 # Download app.py from GitHub
 print("Downloading app.py...", flush=True)
@@ -29,12 +26,13 @@ urllib.request.urlretrieve(
     "/tmp/app.py"
 )
 
-# Write files
+# Write requirements.txt
 with open("/tmp/requirements.txt", "w") as f:
     f.write("gradio>=5.0,<6.0\n")
     f.write("huggingface_hub>=0.26,<0.30\n")
     f.write("audioop-lts;python_version>='3.13'\n")
 
+# Write README.md
 with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("title: Kin Inference\n")
@@ -49,33 +47,25 @@ with open("/tmp/README.md", "w") as f:
     f.write("---\n")
     f.write("KIN Cybersecurity AI inference demo.\n")
 
-# Try creating Space
+# Create Space using create_repo with repo_type="space"
 SPACE_ID = "nyxspecter4/kin-inference"
-print(f"Creating {SPACE_ID}...", flush=True)
+print(f"Creating {SPACE_ID} via create_repo...", flush=True)
 try:
-    result = api.create_space(repo_id=SPACE_ID, space_sdk="gradio", token=HF_TOKEN, private=False)
-    print(f"CREATED OK! Result: {result}", flush=True)
+    api.create_repo(
+        repo_id=SPACE_ID,
+        repo_type="space",
+        private=False,
+        token=HF_TOKEN,
+        space_sdk="gradio",
+    )
+    print("  Created OK!", flush=True)
 except Exception as e:
-    print(f"CREATE FAILED: {type(e).__name__}", flush=True)
-    print(f"Error message: {e}", flush=True)
-    print(f"Error repr: {repr(e)}", flush=True)
-    traceback.print_exc()
-    # Try v2
-    SPACE_ID2 = "nyxspecter4/kin-inference-v2"
-    print(f"Trying {SPACE_ID2}...", flush=True)
-    try:
-        result = api.create_space(repo_id=SPACE_ID2, space_sdk="gradio", token=HF_TOKEN, private=False)
-        print(f"CREATED v2 OK! Result: {result}", flush=True)
-        SPACE_ID = SPACE_ID2
-    except Exception as e2:
-        print(f"CREATE v2 FAILED: {type(e2).__name__}", flush=True)
-        print(f"Error: {e2}", flush=True)
-        traceback.print_exc()
-        print("ALL CREATION ATTEMPTS FAILED", flush=True)
-        sys.exit(1)
+    print(f"  Create failed: {type(e).__name__}: {e}", flush=True)
+    # Maybe already exists, try uploading anyway
+
+time.sleep(5)
 
 # Upload files
-time.sleep(5)
 for fname in ["app.py", "requirements.txt", "README.md"]:
     print(f"Uploading {fname}...", flush=True)
     try:
@@ -91,7 +81,7 @@ for fname in ["app.py", "requirements.txt", "README.md"]:
         print(f"  {fname} FAILED: {type(e).__name__}: {e}", flush=True)
 
 # Status check
-time.sleep(10)
+time.sleep(15)
 try:
     url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
     with urllib.request.urlopen(urllib.request.Request(url)) as resp:
@@ -100,5 +90,4 @@ try:
 except Exception as e:
     print(f"Status: {e}", flush=True)
 
-print(f"SPACE_ID: {SPACE_ID}", flush=True)
 print("=== DONE ===", flush=True)
