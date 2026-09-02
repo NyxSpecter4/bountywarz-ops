@@ -54,7 +54,7 @@ for attempt in range(1, 4):
             time.sleep(5)
 
 REQS = """gradio==4.44.0
-huggingface_hub>=0.26.0
+huggingface_hub>=0.26,<1.0
 audioop-lts
 """
 print("Uploading requirements.txt...", flush=True)
