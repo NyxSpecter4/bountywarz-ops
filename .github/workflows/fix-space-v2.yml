@@ -1,0 +1,36 @@
+name: Fix Space v2
+
+on:
+  push:
+    branches: [main]
+    paths: ['kin-spaces/fix_space.py']
+
+jobs:
+  fix-space:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install "huggingface_hub>=0.26,<0.30"
+      - name: Syntax check
+        run: python -m py_compile kin-spaces/fix_space.py
+      - name: Fix Space
+        run: python kin-spaces/fix_space.py 2>&1 | tee kin-spaces/OUTPUT.txt
+      - name: Commit output
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add kin-spaces/OUTPUT.txt || true
+          git commit -m "chore: capture fix_space output [skip ci]" || true
+          git push || true
