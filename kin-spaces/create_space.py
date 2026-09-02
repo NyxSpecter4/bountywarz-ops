@@ -59,29 +59,27 @@ api.upload_file(path_or_fileobj=p, path_in_repo="requirements.txt",
 os.unlink(p)
 print("requirements.txt uploaded", flush=True)
 
-# Upload README with build timestamp to force new commit
-README = (
-    "---\n"
-    "title: KIN Cybersecurity AI\n"
-    "emoji: \U0001f6e1\n"
-    "colorFrom: gray\n"
-    "colorTo: blue\n"
-    "sdk: gradio\n"
-    "sdk_version: 4.44.0\n"
-    "app_file: app.py\n"
-    "pinned: true\n"
-    "tags:\n"
-    "  - cybersecurity\n"
-    "  - security\n"
-    "  - threat-intelligence\n"
-    "  - penetration-testing\n"
-    "models:\n"
-    "  - " + MODEL_ID + "\n"
-    "---\n\n"
-    "# KIN - Cybersecurity AI (v6 DPO)\n\n"
-    "Chat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.\n\n"
-    "Build: " + buildTs + "\n"
-)
+# Upload README with build timestamp
+README = "---\n" \
+    "title: KIN Cybersecurity AI\n" \
+    "emoji: \U0001f6e1\n" \
+    "colorFrom: gray\n" \
+    "colorTo: blue\n" \
+    "sdk: gradio\n" \
+    "sdk_version: 4.44.0\n" \
+    "app_file: app.py\n" \
+    "pinned: true\n" \
+    "tags:\n" \
+    "  - cybersecurity\n" \
+    "  - security\n" \
+    "  - threat-intelligence\n" \
+    "  - penetration-testing\n" \
+    "models:\n" \
+    "  - " + MODEL_ID + "\n" \
+    "---\n\n" \
+    "# KIN - Cybersecurity AI (v6 DPO)\n\n" \
+    "Chat with KIN, a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B.\n\n" \
+    "Build: 2026-09-02T01:49:18.242Z\n"
 print("Uploading README...", flush=True)
 with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
     f.write(README)
