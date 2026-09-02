@@ -1,1 +1,2 @@
-GGUF conversion trigger
+Re-trigger: 2026-09-02T01:30:13.093Z
+New HF token deployed to main.

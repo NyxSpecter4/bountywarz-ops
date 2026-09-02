@@ -1,0 +1,3 @@
+Trigger GGUF conversion from v6 merged weights
+Source: nyxspecter4/kinetigor-dpo-cybersec
+model.safetensors: 1.88GB Qwen2.5-0.5B + LoRA r=64 DPO
