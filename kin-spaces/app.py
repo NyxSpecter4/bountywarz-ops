@@ -1,7 +1,16 @@
+import os
 import gradio as gr
-from huggingface_hub import InferenceClient
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-client = InferenceClient("nyxspecter4/kinetigor-dpo-cybersec")
+MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
+
+print("Loading tokenizer...", flush=True)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+print("Loading model (Qwen2.5-0.5B DPO)...", flush=True)
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+model.eval()
+print("Model loaded on", model.device, flush=True)
 
 SYSTEM_PROMPT = (
     "You are KIN — a sharp cybersecurity AI partner. Direct, opinionated, specific. "
@@ -11,18 +20,26 @@ SYSTEM_PROMPT = (
     "Name products: 'CrowdStrike Falcon' not 'use EDR'. 'Duo push MFA' not 'implement MFA'."
 )
 
+
 def respond(message, history):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history + [{"role": "user", "content": message}]
     try:
-        response = client.chat_completion(
-            messages=messages,
-            max_tokens=512,
-            temperature=0.7,
-            stream=False,
-        )
-        return response.choices[0].message.content
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer(text, return_tensors="pt").to(model.device)
+        with torch.inference_mode():
+            out = model.generate(
+                **inputs,
+                max_new_tokens=512,
+                do_sample=True,
+                temperature=0.7,
+                top_p=0.9,
+                pad_token_id=tokenizer.eos_token_id,
+            )
+        reply = tokenizer.decode(out[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
+        return reply.strip()
     except Exception as e:
-        return f"[KIN is loading — the Inference API may take a moment to spin up. Try again in a few seconds.]\n\nError: {str(e)}"
+        return f"[KIN hit an error — try again.] Error: {str(e)}"
+
 
 demo = gr.ChatInterface(
     fn=respond,
