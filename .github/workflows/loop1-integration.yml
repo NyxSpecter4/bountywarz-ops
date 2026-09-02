@@ -3,7 +3,8 @@ name: Loop 1 - Challenge Pack to Cockpit to Arena
 on:
   push:
     branches: [main]
-    paths: ['kin-deploy/challenge-packs/**']
+    paths:
+      - 'kin-deploy/challenge-packs/**'
 
 jobs:
   integrate-and-run:
@@ -12,35 +13,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: node-version: '20'
+        with:
+          node-version: '20'
+      
       - name: Find latest challenge pack
         id: find-pack
         run: |
-          PACKS=$(find kin-deploy/challenge-packs -type d -mindepth 1 -maxdepth 1 | sort)
-          if [ -z "$PACKS" ]; then echo "No packs found"; exit 0; fi
-          LATEST=$(echo "$PACKS" | tail -1)
-          NAME=$(basename "$LATEST")
-          echo "pack=$NAME" >> $GITHUB_OUTPUT
-          echo "pack_path=$LATEST" >> $GITHUB_OUTPUT
-      - name: Count existing sports
+          LATEST=$(find kin-deploy/challenge-packs -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort | tail -1)
+          if [ -z "$LATEST" ]; then
+            echo "No challenge packs found"
+            exit 1
+          fi
+          echo "pack=$LATEST" >> $GITHUB_OUTPUT
+          echo "Found pack: $LATEST"
+      
+      - name: Get next Sport number
         id: sport-num
         run: |
           COUNT=$(grep -c "Sport #" arena/kinetigor-cockpit.js || echo 0)
           NEXT=$((COUNT + 1))
           echo "sport=$NEXT" >> $GITHUB_OUTPUT
-      - name: RUN COCKPIT
+      
+      - name: Log integration
         run: |
-          echo "Running Cockpit for Sport #${{ steps.sport-num.outputs.sport }}"
+          echo "Loop 1: Integrating ${{ steps.find-pack.outputs.pack }} as Sport #${{ steps.sport-num.outputs.sport }}"
+      
+      - name: Run Cockpit
+        run: |
           node arena/kinetigor-cockpit.js --sport=${{ steps.sport-num.outputs.sport }}
-      - name: Save Arena Results
+      
+      - name: Save metadata
         run: |
-          PACK="${{ steps.find-pack.outputs.pack }}"
-          SPORT="${{ steps.sport-num.outputs.sport }}"
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          DIR="arena-results/$TIMESTAMP/$PACK"
+          DIR="arena-results/$(date +%Y%m%d-%H%M%S)/${{ steps.find-pack.outputs.pack }}"
           mkdir -p "$DIR"
-          echo '{"pack":"$PACK","sport":$SPORT,"timestamp":"$(date -Iseconds)"}' > "$DIR/metadata.json"
+          echo '{"pack":"${{ steps.find-pack.outputs.pack }}","sport":${{ steps.sport-num.outputs.sport }},"status":"completed","timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}' > "$DIR/metadata.json"
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add . && git commit -m "Loop 1: $PACK (Sport #$SPORT)" || true
+          git add arena-results/ && git commit -m "Loop 1: ${{ steps.find-pack.outputs.pack }} as Sport #${{ steps.sport-num.outputs.sport }}" || true
           git push || true
