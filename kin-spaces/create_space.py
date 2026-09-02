@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Restart the KIN Space using HfApi with correct repo_id parameter."""
+"""Fix Space: update README, try pause+restart cycle, or recreate."""
 import sys, os, time, traceback, json
-print("=== RESTART SPACE ===", flush=True)
-print("Python:", sys.version, flush=True)
+print("=== FIX SPACE ===", flush=True)
 
 _a = "hf_Ndapl"
 _b = "FmxBvaar"
@@ -15,83 +14,96 @@ SPACE_ID = "nyxspecter4/kin-inference"
 from huggingface_hub import HfApi
 import huggingface_hub
 print("huggingface_hub:", huggingface_hub.__version__, flush=True)
-
 api = HfApi(token=HF_TOKEN)
 
 import urllib.request
 url = f"https://huggingface.co/api/spaces/{SPACE_ID}/runtime"
-with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-    state = json.loads(resp.read())
-    print(f"Current stage: {state.get('stage')}", flush=True)
 
-# Method 1: HfApi.restart_space with repo_id
-print("Method 1: api.restart_space(repo_id=...)", flush=True)
+def check_stage():
+    with urllib.request.urlopen(urllib.request.Request(url)) as resp:
+        state = json.loads(resp.read())
+        return state.get("stage")
+
+print(f"Initial stage: {check_stage()}", flush=True)
+
+# Step 1: Fix README with correct sdk_version
+print("Step 1: Fix README...", flush=True)
+README_CONTENT = """---
+title: Kin Inference
+emoji: KIN
+colorFrom: indigo
+colorTo: red
+sdk: gradio
+sdk_version: 5.0.0
+python_version: '3.13'
+app_file: app.py
+pinned: false
+---
+
+KIN Cybersecurity AI inference demo.
+"""
 try:
-    result = api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN)
-    print(f"  Success: {result}", flush=True)
+    with open("/tmp/README.md", "w") as f:
+        f.write(README_CONTENT)
+    api.upload_file(
+        path_or_fileobj="/tmp/README.md",
+        path_in_repo="README.md",
+        repo_id=SPACE_ID,
+        repo_type="space",
+        token=HF_TOKEN,
+    )
+    print("  README updated OK", flush=True)
 except Exception as e:
-    print(f"  Failed: {type(e).__name__}: {e}", flush=True)
-    traceback.print_exc()
+    print(f"  README update failed: {e}", flush=True)
 
-time.sleep(5)
-with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-    state = json.loads(resp.read())
-    print(f"Stage after method 1: {state.get('stage')}", flush=True)
+time.sleep(3)
+print(f"Stage after README fix: {check_stage()}", flush=True)
 
-if state.get("stage") == "PAUSED":
-    # Method 2: Factory reboot
-    print("Method 2: factory_reboot=True", flush=True)
-    try:
-        result = api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
-        print(f"  Success: {result}", flush=True)
-    except Exception as e:
-        print(f"  Failed: {type(e).__name__}: {e}", flush=True)
-        traceback.print_exc()
-
+# Step 2: Pause then restart cycle
+print("Step 2: pause + restart cycle...", flush=True)
+try:
+    api.pause_space(repo_id=SPACE_ID, token=HF_TOKEN)
+    print("  Paused OK", flush=True)
     time.sleep(5)
-    with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-        state = json.loads(resp.read())
-        print(f"Stage after method 2: {state.get('stage')}", flush=True)
+    print(f"  Stage after pause: {check_stage()}", flush=True)
+except Exception as e:
+    print(f"  Pause failed: {e}", flush=True)
 
-if state.get("stage") == "PAUSED":
-    # Method 3: Request hardware then restart
-    print("Method 3: request_hardware + restart", flush=True)
-    try:
-        api.request_space_hardware(repo_id=SPACE_ID, hardware="cpu-basic", token=HF_TOKEN)
-        print("  Hardware requested", flush=True)
-        time.sleep(3)
-        api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN)
-        print("  Restart OK", flush=True)
-    except Exception as e:
-        print(f"  Failed: {type(e).__name__}: {e}", flush=True)
-        traceback.print_exc()
-
+try:
+    api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN)
+    print("  Restart OK", flush=True)
     time.sleep(5)
-    with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-        state = json.loads(resp.read())
-        print(f"Stage after method 3: {state.get('stage')}", flush=True)
+    print(f"  Stage after restart: {check_stage()}", flush=True)
+except Exception as e:
+    print(f"  Restart failed: {e}", flush=True)
 
-if state.get("stage") == "PAUSED":
-    # Method 4: Direct HTTP POST via requests
-    print("Method 4: requests.post", flush=True)
+# Step 3: Factory reboot if still paused
+stage = check_stage()
+if stage in ("PAUSED", "RUNTIME_ERROR"):
+    print("Step 3: Factory reboot...", flush=True)
+    try:
+        api.restart_space(repo_id=SPACE_ID, token=HF_TOKEN, factory_reboot=True)
+        print("  Factory reboot OK", flush=True)
+        time.sleep(10)
+        print(f"  Stage after factory reboot: {check_stage()}", flush=True)
+    except Exception as e:
+        print(f"  Factory reboot failed: {e}", flush=True)
+
+# Step 4: If still not running, try direct HTTP with requests
+stage = check_stage()
+if stage in ("PAUSED", "RUNTIME_ERROR"):
+    print("Step 4: Direct HTTP POST...", flush=True)
     try:
         import requests
         headers = {"Authorization": f"Bearer {HF_TOKEN}"}
         r = requests.post(f"https://huggingface.co/api/spaces/{SPACE_ID}/restart", headers=headers, timeout=30)
-        print(f"  Status: {r.status_code}", flush=True)
-        print(f"  Body: {r.text[:500]}", flush=True)
-        if r.status_code != 200:
-            r2 = requests.post(f"https://huggingface.co/api/spaces/{SPACE_ID}/restart?factory=true", headers=headers, timeout=30)
-            print(f"  Factory status: {r2.status_code}", flush=True)
-            print(f"  Factory body: {r2.text[:500]}", flush=True)
+        print(f"  POST status: {r.status_code}", flush=True)
+        print(f"  POST body: {r.text[:500]}", flush=True)
+        time.sleep(10)
+        print(f"  Stage: {check_stage()}", flush=True)
     except Exception as e:
-        print(f"  Failed: {type(e).__name__}: {e}", flush=True)
-        traceback.print_exc()
+        print(f"  POST failed: {e}", flush=True)
 
-    time.sleep(5)
-    with urllib.request.urlopen(urllib.request.Request(url)) as resp:
-        state = json.loads(resp.read())
-        print(f"Stage after method 4: {state.get('stage')}", flush=True)
-
-print(f"FINAL STAGE: {state.get('stage')}", flush=True)
+stage = check_stage()
+print(f"FINAL STAGE: {stage}", flush=True)
 print("=== DONE ===", flush=True)
