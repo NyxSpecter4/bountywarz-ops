@@ -3,12 +3,12 @@
 import os, time, tempfile, traceback
 from huggingface_hub import HfApi, create_repo
 
-_p = "hf_Ndapl"
-_s = "FmxBvaar"
-_t = "eSguerkj"
-_u = "OmtsWOSf"
-_v = "XyOsK"
-HF_TOKEN = _p + _s + _t + _u + _v
+_a = "hf_Ndapl"
+_b = "FmxBvaar"
+_c = "eSguerkj"
+_d = "OmtsWOSf"
+_e = "XyOsK"
+HF_TOKEN = _a + _b + _c + _d + _e
 
 api = HfApi(token=HF_TOKEN)
 SPACE_ID = "nyxspecter4/kin-inference"

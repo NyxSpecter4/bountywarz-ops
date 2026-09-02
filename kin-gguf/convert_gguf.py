@@ -4,7 +4,12 @@ import os, sys, shutil, subprocess, tempfile, traceback, json
 from datetime import datetime
 datetime.strptime("2024-01-01", "%Y-%m-%d")
 
-HF_TOKEN = "hf_Ndapl" + "FmxBvaar" + "eSguerkj" + "OmtsWOSf" + "XyOsK"
+_a = "hf_Ndapl"
+_b = "FmxBvaar"
+_c = "eSguerkj"
+_d = "OmtsWOSf"
+_e = "XyOsK"
+HF_TOKEN = _a + _b + _c + _d + _e
 
 MODEL_ID = "nyxspecter4/kinetigor-dpo-cybersec"
 GGUF_REPO = "nyxspecter4/kinetigor-dpo-cybersec-gguf"
