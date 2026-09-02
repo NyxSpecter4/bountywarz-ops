@@ -107,6 +107,24 @@ try:
         print(f"  {f} ({sz})")
     dfree()
 
+    # 1d. Patch tokenizer_config.json: v5-style extra_special_tokens (list) crashes transformers v4
+    write_progress("Step 1d: Patching tokenizer_config.json (extra_special_tokens list -> dict)...")
+    tc_path = os.path.join(model_dir, "tokenizer_config.json")
+    if os.path.exists(tc_path):
+        with open(tc_path) as f:
+            tc = json.load(f)
+        est = tc.get("extra_special_tokens")
+        if isinstance(est, list):
+            print(f"  Found extra_special_tokens as list ({len(est)} items) -> empty dict for transformers v4 compat")
+            tc["extra_special_tokens"] = {}
+            with open(tc_path, "w") as f:
+                json.dump(tc, f)
+            print("  tokenizer_config.json patched")
+        else:
+            print("  extra_special_tokens is not a list (type: " + str(type(est)) + ") — no patch needed")
+    else:
+        print("  No tokenizer_config.json found — skipping patch")
+
     # 1b. Patch safetensors if PEFT/LoRA artifacts present
     write_progress("Step 1b: Checking tensor names for PEFT artifacts...")
     index_path = os.path.join(model_dir, "model.safetensors.index.json")
