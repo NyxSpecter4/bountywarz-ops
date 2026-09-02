@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fix KIN Space: valid emoji in README + minimal requirements + restart."""
+"""Fix KIN Space: valid emoji in README + minimal requirements + restart. v2"""
 import sys, os, time, traceback, json, urllib.request
 print("=== FIX SPACE V3 ===", flush=True)
 
@@ -53,7 +53,8 @@ try:
     print(f"  create_commit OK: {commit_info}", flush=True)
 except Exception as e:
     print(f"  create_commit FAILED: {type(e).__name__}: {e}", flush=True)
-    # Fallback: upload individually
+    # Fallback: upload individ
+ually
     for fname in ["requirements.txt", "README.md"]:
         try:
             api.upload_file(
