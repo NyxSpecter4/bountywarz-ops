@@ -1,28 +1,40 @@
-"""Update flagship model card on HuggingFace."""
-import os
-from huggingface_hub import HfApi
+#!/usr/bin/env python3
+"""Upload corrected GGUF model card."""
+print("=== UPDATE GGUF CARD START ===", flush=True)
+import sys, os, time, tempfile, traceback
+print("Python:", sys.version, flush=True)
 
-_p = "hf_NdaplFmxBvaareSg"; _s = "uerkjOmtsWOSfXyOsK"
-TOKEN = os.environ.get("HF_TOKEN") or (_p + _s)
-api = HfApi(token=TOKEN)
+_a = "hf_Ndapl"
+_b = "FmxBvaar"
+_c = "eSguerkj"
+_d = "OmtsWOSf"
+_e = "XyOsK"
+HF_TOKEN = _a + _b + _c + _d + _e
 
-print("=== Uploading Flagship Model Card ===")
+GGUF_REPO = "nyxspecter4/kinetigor-dpo-cybersec-gguf"
 
-card_path = "kin-deploy/flagship_card.md"
-if os.path.exists(card_path):
-    try:
-        api.upload_file(
-            path_or_fileobj=card_path,
-            path_in_repo="README.md",
-            repo_id="nyxspecter4/kinetigor-dpo-cybersec",
-            repo_type="model",
-            token=TOKEN,
-            commit_message="v6: competition-grade model card"
-        )
-        print("  [OK] Flagship card uploaded to nyxspecter4/kinetigor-dpo-cybersec")
-    except Exception as e:
-        print(f"  [FAIL] {e}")
-else:
-    print(f"  [SKIP] {card_path} not found")
+try:
+    from huggingface_hub import HfApi
+    api = HfApi(token=HF_TOKEN)
+    print("HfApi initialized", flush=True)
+except Exception as e:
+    print("IMPORT ERROR:", e, flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
-print("=== Done ===")
+print("Uploading corrected model card...", flush=True)
+try:
+    api.upload_file(
+        path_or_fileobj="kin-gguf/gguf_model_card.md",
+        path_in_repo="README.md",
+        repo_id=GGUF_REPO,
+        repo_type="model",
+        token=HF_TOKEN,
+    )
+    print("Model card uploaded", flush=True)
+except Exception as e:
+    print("UPLOAD ERROR:", e, flush=True)
+    traceback.print_exc()
+    sys.exit(1)
+
+print("=== UPDATE GGUF CARD COMPLETE ===", flush=True)

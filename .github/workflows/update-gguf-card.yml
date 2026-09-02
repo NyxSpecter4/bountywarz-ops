@@ -1,0 +1,28 @@
+name: Update GGUF Card
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  update-card:
+    if: contains(github.event.pull_request.head.ref, 'update-card')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install "huggingface_hub>=0.26"
+      - name: Syntax check
+        run: python -m py_compile kin-gguf/update_card.py
+      - name: Update card
+        run: python kin-gguf/update_card.py

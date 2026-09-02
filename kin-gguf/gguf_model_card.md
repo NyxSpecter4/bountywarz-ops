@@ -2,7 +2,7 @@
 license: apache-2.0
 language:
   - en
-base_model: nyxspecter4/kin-sft-lora
+base_model: nyxspecter4/kinetigor-dpo-cybersec
 library_name: gguf
 pipeline_tag: text-generation
 tags:
@@ -30,25 +30,25 @@ tags:
   - blue-team
 ---
 
-# KIN — Cybersecurity AI (GGUF)
+# KIN v6 DPO — Cybersecurity AI (GGUF)
 
-GGUF quantizations of [KIN](https://huggingface.co/nyxspecter4/kin-sft-lora), a cybersecurity fine-tune of Qwen2.5-3B-Instruct. Run locally with Ollama, llama.cpp, or any GGUF-compatible runtime.
+GGUF quantizations of [KIN v6 DPO](https://huggingface.co/nyxspecter4/kinetigor-dpo-cybersec), a cybersecurity AI fine-tuned via DPO on Qwen2.5-0.5B-Instruct. Run locally with Ollama, llama.cpp, or any GGUF-compatible runtime.
 
 ## Available Quantizations
 
 | File | Quant | Size | Use Case |
 |------|-------|------|----------|
-| `kin-sft-lora-Q4_K_M.gguf` | Q4_K_M | ~2.0 GB | Best balance — recommended for most users |
-| `kin-sft-lora-Q8_0.gguf` | Q8_0 | ~3.3 GB | Highest quality, near-lossless |
+| `kinetigor-v6-Q4_K_M.gguf` | Q4_K_M | ~398 MB | Best balance — recommended for most users |
+| `kinetigor-v6-Q8_0.gguf` | Q8_0 | ~531 MB | Highest quality, near-lossless |
 
 ## Quick Start — Ollama
 
 ```bash
 # Pull and run directly from Hugging Face
-ollama run hf.co/nyxspecter4/kin-sft-lora-gguf:Q4_K_M
+ollama run hf.co/nyxspecter4/kinetigor-dpo-cybersec-gguf:Q4_K_M
 
 # Or pull the Q8_0 version
-ollama run hf.co/nyxspecter4/kin-sft-lora-gguf:Q8_0
+ollama run hf.co/nyxspecter4/kinetigor-dpo-cybersec-gguf:Q8_0
 ```
 
 ## Quick Start — llama.cpp
@@ -59,7 +59,7 @@ git clone https://github.com/ggml-org/llama.cpp
 cd llama.cpp && make
 
 # Run KIN
-./llama-cli -m kin-sft-lora-Q4_K_M.gguf \
+./llama-cli -m kinetigor-v6-Q4_K_M.gguf \
   -p "How do I detect a foothold after a phishing attack?" \
   --system-prompt "You are KIN — a sharp cybersecurity AI partner. Direct, opinionated, specific. Name tools, CVEs, companies. Sound like a senior engineer at a bar, not a textbook."
 ```
@@ -74,9 +74,12 @@ KIN was trained with a specific system prompt. Using a different prompt will deg
 
 KIN answers security questions like a **senior engineer at a bar** — direct, opinionated, and specific. It names real tools (CrowdStrike Falcon, Velociraptor, Duo MFA, KnowBe4), references real CVEs (CVE-2023-4863, CVE-2021-44228, CVE-2024-3094), and knows real incidents (MGM, Colonial Pipeline, NotPetya, Maersk $300M, Merck $670M).
 
-## Training Data
+## Training
 
-Training data available at [nyxspecter4/kin-dpo-data](https://huggingface.co/datasets/nyxspecter4/kin-dpo-data).
+- **Base model:** Qwen2.5-0.5B-Instruct
+- **Fine-tuning:** DPO (Direct Preference Optimization)
+- **Base model repo:** [nyxspecter4/kinetigor-dpo-cybersec](https://huggingface.co/nyxspecter4/kinetigor-dpo-cybersec)
+- **Training data:** [nyxspecter4/kin-dpo-data](https://huggingface.co/datasets/nyxspecter4/kin-dpo-data)
 
 ## License
 
